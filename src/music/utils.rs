@@ -49,11 +49,12 @@ impl Player {
     }
 
     fn play_(&self, path: &str) {
-        println!("{}", path);
-        self.internal_player.set_uri(Some(path));
+        let uri = format!("file://{}", path);
+        self.internal_player.set_uri(Some(uri.as_str()));
         self.internal_player.play();
     }
-    pub fn play(&self, uri: &str) {
-        self.tx.send(PlayerAction::Play(uri.to_string())).unwrap();
+
+    pub fn play(&self, path: &str) {
+        self.tx.send(PlayerAction::Play(path.to_string())).unwrap();
     }
 }

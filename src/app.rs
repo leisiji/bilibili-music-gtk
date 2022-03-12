@@ -1,53 +1,59 @@
-use async_std::prelude::*;
-use glib::{clone, MainContext};
-use gtk::{prelude::*, Application, ApplicationWindow};
+use anyhow::Ok;
+use glib::clone;
+use gtk::{prelude::*, Application, ApplicationWindow, TreeView};
 use std::sync::Arc;
+use tokio::{runtime::Runtime, sync::Mutex};
 
-use crate::music::model::PlayList;
+use crate::music::{data::{SongCollection, Song}, model::PlayList, utils::Player};
 
 pub(crate) struct App {
-    playlist: PlayList,
+    playlist: Arc<PlayList>,
+    player: Arc<Player>,
+    rt: Runtime,
 }
 
 impl App {
-    pub(crate) fn new(application: &gtk::Application) -> Arc<Self> {
+    pub(crate) fn new(application: &gtk::Application) -> Self {
         let glade_src = include_str!("../ui/window.ui");
         let builder = gtk::Builder::from_string(glade_src);
-
-        let playlist = PlayList::new();
+        let tree = TreeView::new();
+        let playlist = PlayList::new(&tree);
 
         let window: ApplicationWindow = builder
             .object("applicationwindow")
             .expect("Couldn't get window");
         window.set_application(Some(application));
-        window.set_child(Some(&playlist.tree));
+        window.set_child(Some(&tree));
 
-        let app = App { playlist };
-        Arc::new(app)
+        let player = Player::new();
+        let rt = Runtime::new().unwrap();
+
+        App { playlist: Arc::new(playlist), player, rt }
     }
 
-    pub(crate) fn init(app: &Arc<Self>) {
-        let dir = "/home/ye/github/BBDown_v1.4.0_20210710_linux-x64";
-
-        let app = app.clone();
-        MainContext::default().spawn_local(async move {
-            let mut entries = async_std::fs::read_dir(dir)
-                .await
-                .expect("failed to read dir");
-            while let Some(res) = entries.next().await {
-                let res = res.expect("failed to get file name");
-                let s = res.file_name().to_str().unwrap().to_string();
-                if let Some(_is_mp3) = s.find("mp3") {
-                    let file = format!("{}/{}", dir, s);
-                    app.playlist.add(file);
-                }
-            }
+    pub(crate) fn init(app: &Self) {
+        let playlist = app.playlist.clone();
+        let song = Song {
+            name: String::from("hello"),
+            play_url: String::from("sdasda"),
+            duration: 12,
+        };
+        playlist.add(song);
+        /*
+        app.rt.spawn(async move {
+            let collection = SongCollection::new(&String::from("BV135411V7A5"));
+            collection.get_songs(|song| {
+                println!("{:?}", song);
+                playlist.add(song);
+            }).await?;
+            Ok(())
         });
+        */
     }
 
     pub(crate) fn run() {
         let application = Application::builder()
-            .application_id("bilibili-music-gtk4")
+            .application_id("com.github.leisiji.bilibili-music-gtk4")
             .build();
         application.connect_startup(clone!(@weak application => @default-panic, move |_|{
             let app = Self::new(&application);

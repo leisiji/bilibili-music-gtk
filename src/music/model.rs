@@ -1,25 +1,36 @@
+use super::data::Song;
 use super::utils::Player;
-use glib::StaticType;
+use duration_string::DurationString;
+use glib::{StaticType, MainContext};
 use gtk::prelude::*;
 use gtk::{prelude::CellLayoutExt, CellRendererText, ListStore, TreeView, TreeViewColumn};
-use std::cell::RefCell;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
+use std::sync::mpsc::Sender;
+use std::time::Duration;
 
 pub(crate) struct PlayList {
-    pub tree: TreeView,
-    store: ListStore,
-    player: Arc<Player>,
-    songlist: Arc<Mutex<RefCell<Vec<String>>>>,
+    // store: ListStore,
+    // songlist: RefCell<Vec<Song>>,
+    tx: std::sync::Mutex<Sender<Song>>
 }
 
 impl PlayList {
-    pub fn new() -> Self {
-        let player = Player::new();
-        let store = ListStore::new(&[String::static_type()]);
-        let tree = TreeView::with_model(&store);
-        let songlist: Arc<Mutex<RefCell<Vec<String>>>> =
-            Arc::new(Mutex::new(RefCell::new(Vec::new())));
+    pub fn new(tree: &TreeView) -> Self {
+        // let player = Player::new();
+        // let songlist = Mutex::new(Vec::new());
 
+        let store = ListStore::new(&[String::static_type()]);
+        tree.set_model(Some(&store));
+
+        let song_name = CellRendererText::new();
+        let col = TreeViewColumn::builder()
+            .sizing(gtk::TreeViewColumnSizing::Fixed)
+            .build();
+        col.pack_start(&song_name, true);
+        col.add_attribute(&song_name, "text", 0);
+        tree.append_column(&col);
+
+        /*
         let song = CellRendererText::new();
         let col = TreeViewColumn::builder()
             .sizing(gtk::TreeViewColumnSizing::Fixed)
@@ -27,32 +38,23 @@ impl PlayList {
         col.pack_start(&song, true);
         col.add_attribute(&song, "text", 0);
         tree.append_column(&col);
+        */
 
-        let p = player.clone();
-        let list = songlist.clone();
-        tree.connect_row_activated(move |_, path, _| {
-            let index: Result<usize, _> = path.indices()[0].try_into();
-            if let Ok(index) = index {
-                let list = list.lock().unwrap();
-                let song = &list.borrow()[index];
-                p.play(song.as_str());
+        let (tx, rx) = std::sync::mpsc::channel::<Song>();
+
+        MainContext::default().spawn_local(async move {
+            while let Ok(song) = rx.recv() {
+                println!("{:?}", song);
+                let iter = store.append();
+                store.set(&iter, &[(0, &song.name)]);
             }
         });
 
-        PlayList {
-            tree,
-            store,
-            player,
-            songlist,
-        }
+        PlayList { tx: Mutex::new(tx) }
     }
 
-    pub fn add(&self, file: String) {
-        let iter = self.store.append();
-        self.store.set(&iter, &[(0, &file)]);
-
-        let songlist = self.songlist.lock().unwrap();
-        let mut songlist = songlist.borrow_mut();
-        songlist.push(file);
+    pub fn add(&self, song: Song) {
+        let tx = self.tx.lock().unwrap();
+        tx.send(song);
     }
 }
