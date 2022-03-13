@@ -143,7 +143,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-std",
- "duration-string",
  "glib 0.14.8",
  "gstreamer 0.17.4",
  "gstreamer-player",
@@ -298,12 +297,6 @@ dependencies = [
  "quote",
  "syn",
 ]
-
-[[package]]
-name = "duration-string"
-version = "0.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eea73537131d449a63e87568ba9d0cff35500501da18b9c2c98e693cabd22139"
 
 [[package]]
 name = "either"

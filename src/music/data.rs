@@ -1,6 +1,6 @@
 use std::cell::{Ref, RefCell};
 
-use anyhow::{Result, Ok};
+use anyhow::{Ok, Result};
 use serde::Deserialize;
 
 pub(crate) struct SongCollection {
@@ -49,23 +49,6 @@ struct PlayerInfo {
     data: PlayerData,
 }
 
-impl SongInfo {
-    pub async fn download(&self) -> Result<String> {
-        let uri = String::new();
-        Ok(uri)
-    }
-}
-
-/*
-impl SongCollectionData {
-    pub async fn get_collection(&self) -> Result<()> {
-        for page in &self.pages {
-        }
-        Ok(())
-    }
-}
-*/
-
 #[derive(Deserialize)]
 struct VideoInfo {
     data: SongCollectionData,
@@ -83,7 +66,7 @@ impl SongCollection {
             .await?
             .json::<VideoInfo>()
             .await?;
-        for page in videoinfo.data.pages {
+        for page in &videoinfo.data.pages[0..10] {
             let player_info = reqwest::get(format!(
                 "https://api.bilibili.com/x/player/playurl?cid={}&bvid={}&qn=64&fnval=16",
                 page.cid, self.bvid

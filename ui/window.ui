@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Generated with glade 3.38.2 -->
 <interface>
-  <object class="GtkApplicationWindow" id="applicationwindow">
+  <object class="GtkApplicationWindow" id="app_win">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
     <property name="show-menubar">False</property>
     <child>
-      <object class="GtkListBox" id="musiclist">
-        <property name="can-focus">False</property>
+      <object class="GtkTreeView" id="music_list">
       </object>
     </child>
   </object>

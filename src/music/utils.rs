@@ -1,6 +1,6 @@
-use std::sync::Arc;
+use std::{cell::RefCell, rc::Rc, sync::Arc};
 
-use glib::{MainContext, Sender};
+use glib::{MainContext, Receiver, Sender};
 use gstreamer_player::prelude::Cast;
 
 extern crate gstreamer_player;
@@ -16,7 +16,7 @@ pub(crate) struct Player {
 }
 
 impl Player {
-    fn play_handle(&self, action: PlayerAction) {
+    fn handle(&self, action: PlayerAction) {
         match action {
             PlayerAction::Play(uri) => self.play_(&uri),
             PlayerAction::Pause => println!("todo"),
@@ -41,7 +41,7 @@ impl Player {
 
         let rx_player = player.clone();
         rx.attach(None, move |action| {
-            rx_player.play_handle(action);
+            rx_player.handle(action);
             glib::Continue(true)
         });
 
@@ -55,6 +55,7 @@ impl Player {
     }
 
     pub fn play(&self, path: &str) {
+        println!("{}", path);
         self.tx.send(PlayerAction::Play(path.to_string())).unwrap();
     }
 }
