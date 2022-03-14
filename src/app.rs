@@ -1,18 +1,13 @@
 use anyhow::{Ok, Result};
 use gtk::{prelude::*, Application, ApplicationWindow, TreeView};
 use reqwest::header;
-use reqwest::ClientBuilder;
 use std::borrow::Borrow;
 use std::io::Write;
-use std::io::copy;
 use std::sync::Arc;
-use std::{
-    fs::File,
-    path::{Path, PathBuf},
-    rc::Rc,
-};
+use std::{fs::File, path::Path, rc::Rc};
 use tokio::runtime::Runtime;
 
+use crate::music::config;
 use crate::music::{data::SongCollection, model::PlayList, utils::Player};
 
 pub(crate) struct App {
@@ -36,11 +31,11 @@ impl App {
         let mut headers = header::HeaderMap::default();
         headers.insert(
             header::REFERER,
-            header::HeaderValue::from_static("https://www.bilibili.com/"),
+            header::HeaderValue::from_static(config::BILIBILI_REFERER),
         );
         headers.insert(
-            header::USER_AGENT, 
-            header::HeaderValue::from_static("User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36 Edg/98.0.1108.56")
+            header::USER_AGENT,
+            header::HeaderValue::from_static(config::BILIBILI_UA),
         );
         let client = reqwest::Client::builder()
             .default_headers(headers)

@@ -1,15 +1,11 @@
 use super::data::Song;
-use super::utils::Player;
 use glib::{MainContext, StaticType};
 use gtk::prelude::*;
 use gtk::{prelude::CellLayoutExt, CellRendererText, ListStore, TreeView, TreeViewColumn};
-use std::sync::mpsc::{Receiver, Sender};
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::sync::mpsc::Sender;
+use std::sync::Mutex;
 
 pub(crate) struct PlayList {
-    // store: ListStore,
-    // songlist: RefCell<Vec<Song>>,
     tx: std::sync::Mutex<Sender<Song>>,
 }
 
@@ -58,6 +54,6 @@ impl PlayList {
 
     pub fn add(&self, song: Song) {
         let tx = self.tx.lock().unwrap();
-        tx.send(song);
+        tx.send(song).expect("Failed to add song");
     }
 }

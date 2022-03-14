@@ -1,6 +1,6 @@
-use std::{cell::RefCell, rc::Rc, sync::Arc};
+use std::sync::Arc;
 
-use glib::{MainContext, Receiver, Sender};
+use glib::{MainContext, Sender};
 use gstreamer_player::prelude::Cast;
 
 extern crate gstreamer_player;
