@@ -1,17 +1,22 @@
 use super::data::Song;
-use glib::{MainContext, StaticType};
+use glib::StaticType;
 use gtk::prelude::*;
 use gtk::{prelude::CellLayoutExt, CellRendererText, ListStore, TreeView, TreeViewColumn};
-use std::sync::mpsc::Sender;
 use std::sync::Mutex;
 
 pub(crate) struct PlayList {
-    tx: std::sync::Mutex<Sender<Song>>,
+    tx: Mutex<glib::Sender<TreeViewCtrl>>,
+}
+
+pub(crate) enum TreeViewCtrl {
+    Start,
+    Add(Song),
+    End,
 }
 
 impl PlayList {
-    pub fn new(tree: &TreeView) -> Self {
-        // let songlist = Mutex::new(Vec::new());
+    pub fn new(tree: TreeView) -> Self {
+        // name, duration, play_url
         let store = ListStore::new(&[
             String::static_type(),
             String::static_type(),
@@ -36,17 +41,22 @@ impl PlayList {
         col.add_attribute(&duration, "text", 1);
         tree.append_column(&col);
 
-        let (tx, rx) = std::sync::mpsc::channel::<Song>();
+        let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
 
-        MainContext::default().spawn_local(async move {
-            while let Ok(song) = rx.recv() {
-                let iter = store.append();
-                let duration_string = format!("{}", song.duration);
-                store.set(
-                    &iter,
-                    &[(0, &song.name), (1, &duration_string), (2, &song.play_url)],
-                );
-            }
+        rx.attach(None, move |ctrl| {
+            match ctrl {
+                TreeViewCtrl::Add(song) => {
+                    let iter = store.append();
+                    let duration_string = format!("{}", song.duration);
+                    store.set(
+                        &iter,
+                        &[(0, &song.name), (1, &duration_string), (2, &song.play_url)],
+                    );
+                }
+                TreeViewCtrl::Start => todo!(),
+                TreeViewCtrl::End => todo!(),
+            };
+            glib::Continue(true)
         });
 
         PlayList { tx: Mutex::new(tx) }
@@ -54,6 +64,17 @@ impl PlayList {
 
     pub fn add(&self, song: Song) {
         let tx = self.tx.lock().unwrap();
-        tx.send(song).expect("Failed to add song");
+        tx.send(TreeViewCtrl::Add(song))
+            .expect("Failed to add song");
+    }
+    pub fn start(&self) {
+        let tx = self.tx.lock().unwrap();
+        tx.send(TreeViewCtrl::Start)
+            .expect("Failed to start");
+    }
+    pub fn end(&self) {
+        let tx = self.tx.lock().unwrap();
+        tx.send(TreeViewCtrl::End)
+            .expect("Failed to end");
     }
 }

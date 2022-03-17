@@ -4,10 +4,10 @@ use reqwest::header;
 use std::borrow::Borrow;
 use std::io::Write;
 use std::sync::Arc;
-use std::{fs::File, path::Path, rc::Rc};
+use std::{fs::File, rc::Rc};
 use tokio::runtime::Runtime;
 
-use crate::music::config;
+use crate::music::config::{self, CACHE_DIR};
 use crate::music::{data::SongCollection, model::PlayList, utils::Player};
 
 pub(crate) struct App {
@@ -21,13 +21,10 @@ impl App {
         let rt = Runtime::new().unwrap();
 
         let app = App { player, rt };
-
         Rc::new(app)
     }
 
-    async fn download_song(url: &str) -> Result<String> {
-        let tmp_dir = "/home/ye";
-
+    async fn download_song(url: &str, name: &str) -> Result<String> {
         let mut headers = header::HeaderMap::default();
         headers.insert(
             header::REFERER,
@@ -42,14 +39,13 @@ impl App {
             .build()?;
         let response = client.get(url).send().await?;
 
-        let fname = "tmp.mp3";
-
-        let path = Path::new(tmp_dir).join(fname);
-        let s = String::from(path.to_str().unwrap());
+        let path = CACHE_DIR.join(name);
+        let s = path.clone().into_os_string().into_string().unwrap();
 
         let mut dest = { File::create(path)? };
         let buf = response.bytes().await?;
         dest.write(buf.borrow())?;
+
         Ok(s)
     }
 
@@ -66,15 +62,17 @@ impl App {
             if let Some((model, iter)) = tree.selection().selected() {
                 let play_url = model.get(&iter, 2).get::<String>().unwrap();
                 let player = strong_app.player.clone();
+                let name = model.get(&iter, 0).get::<String>().unwrap();
                 strong_app.rt.spawn(async move {
-                    let s = Self::download_song(&play_url).await?;
+                    let s = Self::download_song(&play_url, name.as_str()).await?;
                     player.play(s.as_str());
                     Ok(())
                 });
             }
         });
 
-        let playlist = PlayList::new(&tree);
+        let playlist = PlayList::new(tree);
+
         app.rt.spawn(async move {
             let collection = SongCollection::new(&String::from("BV135411V7A5"));
             collection

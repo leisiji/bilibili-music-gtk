@@ -55,7 +55,7 @@ impl Player {
     }
 
     pub fn play(&self, path: &str) {
-        println!("{}", path);
+        // println!("{}", path);
         self.tx.send(PlayerAction::Play(path.to_string())).unwrap();
     }
 }
