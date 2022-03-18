@@ -1,5 +1,15 @@
+use crate::music::config::{self, CACHE_DIR};
 use anyhow::{Ok, Result};
+use reqwest::header;
 use serde::Deserialize;
+use std::borrow::Borrow;
+use std::fs::File;
+use std::io::Write;
+use std::ops::Add;
+use std::sync::Arc;
+use tokio::runtime::Runtime;
+
+use super::model::PlayList;
 
 pub(crate) struct SongCollection {
     bvid: String,
@@ -55,32 +65,70 @@ impl SongCollection {
         SongCollection { bvid }
     }
 
-    pub async fn get_songs<F: Fn(Song)>(&self, consume: F) -> Result<()> {
+    pub async fn get_songs(&self, list: Arc<PlayList>) -> Result<()> {
         const URL_COLLECTION_INFO: &str = "http://api.bilibili.com/x/web-interface/view?bvid=";
         let videoinfo = reqwest::get(format!("{}{}", URL_COLLECTION_INFO, self.bvid))
             .await?
             .json::<VideoInfo>()
             .await?;
-        for page in &videoinfo.data.pages {
-            let player_info = reqwest::get(format!(
-                "https://api.bilibili.com/x/player/playurl?cid={}&bvid={}&qn=64&fnval=16",
-                page.cid, self.bvid
-            ))
-            .await?
-            .json::<PlayerInfo>()
-            .await?;
+        let mut handles = Vec::new();
 
-            if let Some(audio) = player_info.data.dash.audio.get(0) {
-                let song: Song = Song {
-                    name: page.part.clone(),
-                    play_url: audio.baseUrl.clone(),
-                    duration: page.duration,
-                };
-                consume(song);
-            }
+        for page in videoinfo.data.pages {
+            let list = list.clone();
+            let bvid = self.bvid.clone();
+            let h = tokio::spawn(async move {
+                let player_info = reqwest::get(format!(
+                    "https://api.bilibili.com/x/player/playurl?cid={}&bvid={}&qn=64&fnval=16",
+                    page.cid, bvid
+                ))
+                .await?
+                .json::<PlayerInfo>()
+                .await?;
+
+                if let Some(audio) = player_info.data.dash.audio.get(0) {
+                    let song: Song = Song {
+                        name: page.part.clone(),
+                        play_url: audio.baseUrl.clone(),
+                        duration: page.duration,
+                    };
+                    list.add(song);
+                }
+                Ok(())
+            });
+            handles.push(h);
         }
+
+        for h in handles {
+            h.await?;
+        }
+
         Ok(())
     }
+}
+
+pub async fn download_song(url: &str, name: &str) -> Result<String> {
+    let mut headers = header::HeaderMap::default();
+    headers.insert(
+        header::REFERER,
+        header::HeaderValue::from_static(config::BILIBILI_REFERER),
+    );
+    headers.insert(
+        header::USER_AGENT,
+        header::HeaderValue::from_static(config::BILIBILI_UA),
+    );
+    let client = reqwest::Client::builder()
+        .default_headers(headers)
+        .build()?;
+    let response = client.get(url).send().await?;
+
+    let path = CACHE_DIR.join(name);
+    let s = path.clone().into_os_string().into_string().unwrap();
+
+    let mut dest = { File::create(path)? };
+    let buf = response.bytes().await?;
+    dest.write(buf.borrow())?;
+
+    Ok(s)
 }
 
 #[cfg(test)]

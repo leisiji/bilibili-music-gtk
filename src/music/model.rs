@@ -67,14 +67,14 @@ impl PlayList {
         tx.send(TreeViewCtrl::Add(song))
             .expect("Failed to add song");
     }
+
     pub fn start(&self) {
         let tx = self.tx.lock().unwrap();
-        tx.send(TreeViewCtrl::Start)
-            .expect("Failed to start");
+        tx.send(TreeViewCtrl::Start).expect("Failed to start");
     }
+
     pub fn end(&self) {
         let tx = self.tx.lock().unwrap();
-        tx.send(TreeViewCtrl::End)
-            .expect("Failed to end");
+        tx.send(TreeViewCtrl::End).expect("Failed to end");
     }
 }
