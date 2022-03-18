@@ -107,6 +107,12 @@ impl SongCollection {
 }
 
 pub async fn download_song(url: &str, name: &str) -> Result<String> {
+    let path = CACHE_DIR.join(name);
+    let s = path.clone().into_os_string().into_string().unwrap();
+    if path.exists() {
+        return Ok(s);
+    }
+
     let mut headers = header::HeaderMap::default();
     headers.insert(
         header::REFERER,
@@ -120,9 +126,6 @@ pub async fn download_song(url: &str, name: &str) -> Result<String> {
         .default_headers(headers)
         .build()?;
     let response = client.get(url).send().await?;
-
-    let path = CACHE_DIR.join(name);
-    let s = path.clone().into_os_string().into_string().unwrap();
 
     let mut dest = { File::create(path)? };
     let buf = response.bytes().await?;

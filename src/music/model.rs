@@ -26,6 +26,7 @@ impl PlayList {
         tree.set_model(Some(&store));
 
         let song_name = CellRendererText::new();
+        song_name.set_width(500);
         let col = TreeViewColumn::builder()
             .sizing(gtk::TreeViewColumnSizing::Fixed)
             .build();
