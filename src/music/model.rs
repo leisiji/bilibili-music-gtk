@@ -2,20 +2,32 @@ use super::data::Song;
 use glib::StaticType;
 use gtk::prelude::*;
 use gtk::{prelude::CellLayoutExt, CellRendererText, ListStore, TreeView, TreeViewColumn};
-use std::sync::Mutex;
 
 pub(crate) struct PlayList {
-    tx: Mutex<glib::Sender<TreeViewCtrl>>,
+    tx: glib::Sender<TreeViewCtrl>,
 }
 
 pub(crate) enum TreeViewCtrl {
-    Start,
+    StartRefresh,
     Add(Song),
-    End,
+    EndRefresh,
 }
 
 impl PlayList {
-    pub fn new(tree: TreeView) -> Self {
+    fn add_song(song: &Song, store: &ListStore) {
+        let iter = store.append();
+        let duration = format!(
+            "{:0>2}:{:0>2}",
+            song.duration / 60,
+            song.duration % 60
+        );
+        store.set(
+            &iter,
+            &[(0, &song.name), (1, &duration), (2, &song.play_url)],
+        );
+    }
+
+    pub fn new(tree: &TreeView) -> Self {
         // name, duration, play_url
         let store = ListStore::new(&[
             String::static_type(),
@@ -46,36 +58,25 @@ impl PlayList {
 
         rx.attach(None, move |ctrl| {
             match ctrl {
-                TreeViewCtrl::Add(song) => {
-                    let iter = store.append();
-                    let duration_string = format!("{}", song.duration);
-                    store.set(
-                        &iter,
-                        &[(0, &song.name), (1, &duration_string), (2, &song.play_url)],
-                    );
-                }
-                TreeViewCtrl::Start => todo!(),
-                TreeViewCtrl::End => todo!(),
+                TreeViewCtrl::Add(song) => Self::add_song(&song, &store),
+                TreeViewCtrl::StartRefresh => todo!(),
+                TreeViewCtrl::EndRefresh => todo!(),
             };
             glib::Continue(true)
         });
 
-        PlayList { tx: Mutex::new(tx) }
+        PlayList { tx }
     }
 
     pub fn add(&self, song: Song) {
-        let tx = self.tx.lock().unwrap();
-        tx.send(TreeViewCtrl::Add(song))
-            .expect("Failed to add song");
+        self.tx.send(TreeViewCtrl::Add(song)).expect("Failed to add song");
     }
 
-    pub fn start(&self) {
-        let tx = self.tx.lock().unwrap();
-        tx.send(TreeViewCtrl::Start).expect("Failed to start");
+    pub fn start_refresh(&self) {
+        self.tx.send(TreeViewCtrl::StartRefresh).expect("Failed to start");
     }
 
-    pub fn end(&self) {
-        let tx = self.tx.lock().unwrap();
-        tx.send(TreeViewCtrl::End).expect("Failed to end");
+    pub fn end_refresh(&self) {
+        self.tx.send(TreeViewCtrl::EndRefresh).expect("Failed to end");
     }
 }

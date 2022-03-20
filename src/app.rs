@@ -1,7 +1,7 @@
 use anyhow::Ok;
-use gtk::{prelude::*, Application, ApplicationWindow, TreeView};
-use std::rc::Rc;
-use std::sync::Arc;
+use gtk::{prelude::*, Application, ApplicationWindow, TreeView, TreeIter};
+use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 use tokio::runtime::Runtime;
 
 use crate::music::{
@@ -15,23 +15,24 @@ pub(crate) struct App {
 }
 
 impl App {
-    pub(crate) fn new() -> Rc<Self> {
+    pub(crate) fn new() -> Arc<Self> {
         let player = Player::new();
 
         let app = App { player };
-        Rc::new(app)
+        Arc::new(app)
     }
 
-    pub(crate) fn init(app: Rc<Self>, application: &gtk::Application) {
+    pub(crate) fn init(app: Arc<Self>, application: &gtk::Application) {
         let glade_src = include_str!("../ui/window.ui");
         let builder = gtk::Builder::from_string(glade_src);
         let tree: TreeView = builder.object("music_list").unwrap();
         let rt = Arc::new(Runtime::new().unwrap());
+        let playlist = Arc::new(PlayList::new(&tree));
 
         let window: ApplicationWindow = builder.object("app_win").unwrap();
         window.set_application(Some(application));
 
-        let strong_app = Rc::clone(&app);
+        let strong_app = app.clone();
         let runtime = rt.clone();
         tree.connect_row_activated(move |tree, _path, _col| {
             if let Some((model, iter)) = tree.selection().selected() {
@@ -46,11 +47,14 @@ impl App {
             }
         });
 
-        let list = Arc::new(PlayList::new(tree));
+        let list = playlist.clone();
         rt.spawn(async move {
             let collection = SongCollection::new(&String::from("BV135411V7A5"));
             collection.get_songs(list).await?;
             Ok(())
+        });
+
+        Player::register_complete_cb(&app.player, move |player| {
         });
     }
 

@@ -10,6 +10,10 @@
       <object class="GtkScrolledWindow" id="subpages_scrolled_window">
         <child>
           <object class="GtkTreeView" id="music_list">
+            <property name="headers_visible">False</property>
+            <property name="valign">start</property>
+            <property name="can_focus">True</property>
+            <property name="visible">True</property>
           </object>
         </child>
       </object>

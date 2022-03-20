@@ -58,4 +58,14 @@ impl Player {
         // println!("{}", path);
         self.tx.send(PlayerAction::Play(path.to_string())).unwrap();
     }
+
+    pub fn register_complete_cb<F>(player: &Arc<Self>, f: F)
+    where
+        F: Fn(&Self) + Send + 'static,
+    {
+        let strong_player = player.clone();
+        player.internal_player.connect_end_of_stream(move |_player| {
+            f(&strong_player);
+        });
+    }
 }
