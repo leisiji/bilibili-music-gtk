@@ -5,17 +5,15 @@ use serde::Deserialize;
 use std::borrow::Borrow;
 use std::fs::File;
 use std::io::Write;
-use std::ops::Add;
 use std::sync::Arc;
-use tokio::runtime::Runtime;
 
-use super::model::PlayList;
+use super::model::PlayListModel;
 
 pub(crate) struct SongCollection {
     bvid: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Song {
     pub name: String,
     pub duration: u32,
@@ -65,7 +63,7 @@ impl SongCollection {
         SongCollection { bvid }
     }
 
-    pub async fn get_songs(&self, list: Arc<PlayList>) -> Result<()> {
+    pub async fn get_songs(&self, list: Arc<PlayListModel>) -> Result<()> {
         const URL_COLLECTION_INFO: &str = "http://api.bilibili.com/x/web-interface/view?bvid=";
         let videoinfo = reqwest::get(format!("{}{}", URL_COLLECTION_INFO, self.bvid))
             .await?
@@ -132,19 +130,4 @@ pub async fn download_song(url: &str, name: &str) -> Result<String> {
     dest.write(buf.borrow())?;
 
     Ok(s)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::SongCollection;
-    use tokio::runtime::Runtime;
-
-    #[test]
-    fn it_works() {
-        let rt = Runtime::new().unwrap();
-        let s = SongCollection::new("BV135411V7A5");
-        rt.block_on(s.get_songs(|song| {
-            println!("{:?}", song);
-        }));
-    }
 }

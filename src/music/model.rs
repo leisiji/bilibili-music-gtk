@@ -1,9 +1,10 @@
+use super::config::{self, PLAYLIST};
 use super::data::Song;
 use glib::StaticType;
 use gtk::prelude::*;
 use gtk::{prelude::CellLayoutExt, CellRendererText, ListStore, TreeView, TreeViewColumn};
 
-pub(crate) struct PlayList {
+pub(crate) struct PlayListModel {
     tx: glib::Sender<TreeViewCtrl>,
 }
 
@@ -13,7 +14,7 @@ pub(crate) enum TreeViewCtrl {
     EndRefresh,
 }
 
-impl PlayList {
+impl PlayListModel {
     fn add_song(song: &Song, store: &ListStore) {
         let iter = store.append();
         let duration = format!(
@@ -21,18 +22,20 @@ impl PlayList {
             song.duration / 60,
             song.duration % 60
         );
+        let index: u32 = PLAYLIST.lock().unwrap().list.len().try_into().unwrap();
         store.set(
             &iter,
-            &[(0, &song.name), (1, &duration), (2, &song.play_url)],
+            &[(0, &song.name), (1, &duration), (2, &song.play_url), (3, &index)],
         );
     }
 
     pub fn new(tree: &TreeView) -> Self {
-        // name, duration, play_url
+        // name, duration, play_url, cur list index
         let store = ListStore::new(&[
             String::static_type(),
             String::static_type(),
             String::static_type(),
+            u32::static_type(),
         ]);
 
         tree.set_model(Some(&store));
@@ -65,11 +68,13 @@ impl PlayList {
             glib::Continue(true)
         });
 
-        PlayList { tx }
+        PlayListModel { tx }
     }
 
     pub fn add(&self, song: Song) {
-        self.tx.send(TreeViewCtrl::Add(song)).expect("Failed to add song");
+        self.tx.send(TreeViewCtrl::Add(song.clone())).expect("Failed to add song");
+        let mut playlist = PLAYLIST.lock().unwrap();
+        playlist.list.push(song);
     }
 
     pub fn start_refresh(&self) {
