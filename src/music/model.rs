@@ -15,24 +15,10 @@ pub(crate) enum TreeViewCtrl {
 }
 
 impl PlayListModel {
-    fn add_song(song: &Song, store: &ListStore) {
-        let iter = store.append();
-        let duration = format!(
-            "{:0>2}:{:0>2}",
-            song.duration / 60,
-            song.duration % 60
-        );
-        let index: u32 = PLAYLIST.lock().unwrap().list.len().try_into().unwrap();
-        store.set(
-            &iter,
-            &[(0, &song.name), (1, &duration), (2, &song.play_url), (3, &index)],
-        );
-    }
 
     pub fn new(tree: &TreeView) -> Self {
-        // name, duration, play_url, cur list index
+        // name, duration, cur list index
         let store = ListStore::new(&[
-            String::static_type(),
             String::static_type(),
             String::static_type(),
             u32::static_type(),
@@ -61,7 +47,7 @@ impl PlayListModel {
 
         rx.attach(None, move |ctrl| {
             match ctrl {
-                TreeViewCtrl::Add(song) => Self::add_song(&song, &store),
+                TreeViewCtrl::Add(song) => Self::add_song_(song, &store),
                 TreeViewCtrl::StartRefresh => todo!(),
                 TreeViewCtrl::EndRefresh => todo!(),
             };
@@ -72,9 +58,28 @@ impl PlayListModel {
     }
 
     pub fn add(&self, song: Song) {
-        self.tx.send(TreeViewCtrl::Add(song.clone())).expect("Failed to add song");
-        let mut playlist = PLAYLIST.lock().unwrap();
-        playlist.list.push(song);
+        self.tx.send(TreeViewCtrl::Add(song)).expect("Failed to add song");
+    }
+
+    fn add_song_(song: Song, store: &ListStore) {
+        let iter = store.append();
+        let duration = format!(
+            "{:0>2}:{:0>2}",
+            song.duration / 60,
+            song.duration % 60
+        );
+        let index: u32;
+
+        {
+            let mut playlist = PLAYLIST.lock().unwrap();
+            index = playlist.list.len().try_into().unwrap();
+            playlist.list.push(song.clone());
+        }
+
+        store.set(
+            &iter,
+            &[(0, &song.name), (1, &duration), (2, &index)],
+        );
     }
 
     pub fn start_refresh(&self) {

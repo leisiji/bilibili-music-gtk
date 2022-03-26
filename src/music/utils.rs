@@ -10,6 +10,7 @@ use super::{config::PLAYLIST, data::download_song};
 extern crate gstreamer_player;
 
 enum PlayerAction {
+    DownPlay(u32),
     Play(String),
     Next,
     Pause,
@@ -25,7 +26,8 @@ impl Player {
 
     fn handle(player: &Arc<Self>, action: PlayerAction) {
         match action {
-            PlayerAction::Play(uri) => player.play_(&uri),
+            PlayerAction::DownPlay(index) => player.download_(index),
+            PlayerAction::Play(song) => player.play_(song),
             PlayerAction::Pause => println!("todo"),
             PlayerAction::Next => Self::play_next_(player),
         };
@@ -62,29 +64,46 @@ impl Player {
         player
     }
 
-    fn play_(&self, path: &str) {
+    fn play_(&self, path: String) {
         let uri = format!("file://{}", path);
         self.internal_player.set_uri(Some(uri.as_str()));
         self.internal_player.play();
     }
 
-    fn play_next_(player: &Arc<Self>) {
+    fn download_(&self, index: u32) {
         let playlist = PLAYLIST.lock().unwrap();
-        let index: usize = playlist.cur.try_into().unwrap();
+        let index: usize = index.try_into().unwrap();
         if let Some(song) = playlist.list.get(index) {
             let url = song.play_url.clone();
             let name = song.name.clone();
-            let next_player = player.clone();
-            player.rt.spawn(async move {
+            let tx = self.tx.clone();
+            self.rt.spawn(async move {
                 let s = download_song(url.as_str(), name.as_str()).await?;
-                next_player.play(s.as_str());
+                tx.send(PlayerAction::Play(s)).unwrap();
                 Ok(())
             });
         }
     }
 
-    pub fn play(&self, path: &str) {
-       self.tx.send(PlayerAction::Play(path.to_string())).unwrap();
+    fn play_next_(player: &Arc<Self>) {
+        let index: usize;
+        {
+            let mut playlist = PLAYLIST.lock().unwrap();
+            playlist.cur = playlist.cur + 1;
+            index = playlist.cur.try_into().unwrap();
+            if index >= playlist.list.len() {
+                return;
+            }
+        }
+        player.tx.send(PlayerAction::DownPlay(index.try_into().unwrap())).unwrap();
+    }
+
+    pub fn down_play(&self, index: u32) {
+       self.tx.send(PlayerAction::DownPlay(index)).unwrap();
+    }
+
+    pub fn play(&self, path: String) {
+        self.tx.send(PlayerAction::Play(path)).unwrap();
     }
 
     pub fn play_next(&self) {

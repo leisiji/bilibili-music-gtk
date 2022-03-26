@@ -4,7 +4,7 @@ use std::sync::Arc;
 use tokio::runtime::Runtime;
 
 use crate::music::{
-    data::{download_song, SongCollection},
+    data::SongCollection,
     model::PlayListModel,
     utils::Player, config::PLAYLIST,
 };
@@ -32,20 +32,12 @@ impl App {
         let window: ApplicationWindow = builder.object("app_win").unwrap();
         window.set_application(Some(application));
 
-        let strong_app = app.clone();
-        let runtime = app.rt.clone();
+        let player = app.player.clone();
         tree.connect_row_activated(move |tree, _path, _col| {
             if let Some((model, iter)) = tree.selection().selected() {
-                let play_url = model.get(&iter, 2).get::<String>().unwrap();
-                let name = model.get(&iter, 0).get::<String>().unwrap();
-                let cur = model.get(&iter, 3).get::<u32>().unwrap();
+                let cur = model.get(&iter, 2).get::<u32>().unwrap();
+                player.down_play(cur);
                 PLAYLIST.lock().unwrap().cur = cur;
-                let player = strong_app.player.clone();
-                runtime.spawn(async move {
-                    let s = download_song(&play_url, name.as_str()).await?;
-                    player.play(s.as_str());
-                    Ok(())
-                });
             }
         });
 

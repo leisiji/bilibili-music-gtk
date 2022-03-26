@@ -97,7 +97,7 @@ impl SongCollection {
         }
 
         for h in handles {
-            h.await?;
+            h.await??;
         }
 
         Ok(())
