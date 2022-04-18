@@ -10,7 +10,7 @@ pub(crate) static BILIBILI_UA: &str = "User-Agent: Mozilla/5.0 (X11; Linux x86_6
 
 pub(crate) struct PlayList {
     pub(crate) list: Vec<Song>,
-    pub(crate) cur: u32,
+    pub(crate) cur: usize,
 }
 
 impl PlayList {

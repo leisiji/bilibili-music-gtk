@@ -3,17 +3,17 @@ use std::sync::Arc;
 use anyhow::Ok;
 use glib::{MainContext, Sender};
 use gstreamer_player::prelude::Cast;
+use gtk::{Builder, Button, prelude::*};
 use tokio::runtime::Runtime;
 
 use super::{config::PLAYLIST, data::download_song};
 
-extern crate gstreamer_player;
-
 enum PlayerAction {
-    DownPlay(u32),
+    DownPlay(usize),
     Play(String),
     Next,
-    Pause,
+    Prev,
+    PauseOrStart,
 }
 
 pub(crate) struct Player {
@@ -28,12 +28,34 @@ impl Player {
         match action {
             PlayerAction::DownPlay(index) => player.download_(index),
             PlayerAction::Play(song) => player.play_(song),
-            PlayerAction::Pause => println!("todo"),
-            PlayerAction::Next => Self::play_next_(player),
+            PlayerAction::PauseOrStart => player.internal_player.pause(),
+            PlayerAction::Next => Self::play_index_(player, 1),
+            PlayerAction::Prev => Self::play_index_(player, -1),
         };
     }
 
-    pub fn new(rt: &Arc<Runtime>) -> Arc<Self> {
+    fn init_player_widget(player: &Arc<Self>, builder: &Builder) {
+        let backward: Button = builder.object("backward_button").unwrap();
+        let forward: Button = builder.object("forward_button").unwrap();
+        let pause_button: Button = builder.object("pause_button").unwrap();
+
+        let p = player.clone();
+        forward.connect_clicked(move |_| {
+            p.play_next();
+        });
+
+        let p = player.clone();
+        pause_button.connect_clicked(move |_| {
+            p.pause();
+        });
+
+        let p = player.clone();
+        backward.connect_clicked(move |_| {
+            p.play_prev();
+        });
+    }
+
+    pub fn new(rt: &Arc<Runtime>, builder: &Builder) -> Arc<Self> {
         gstreamer::init().expect("failed to init gstreamer");
 
         let dispatcher = gstreamer_player::PlayerGMainContextSignalDispatcher::new(None);
@@ -61,6 +83,8 @@ impl Player {
             tx.send(PlayerAction::Next).unwrap();
         });
 
+        Self::init_player_widget(&player, builder);
+
         player
     }
 
@@ -70,9 +94,8 @@ impl Player {
         self.internal_player.play();
     }
 
-    fn download_(&self, index: u32) {
+    fn download_(&self, index: usize) {
         let playlist = PLAYLIST.lock().unwrap();
-        let index: usize = index.try_into().unwrap();
         if let Some(song) = playlist.list.get(index) {
             let url = song.play_url.clone();
             let name = song.name.clone();
@@ -85,21 +108,20 @@ impl Player {
         }
     }
 
-    fn play_next_(player: &Arc<Self>) {
-        let index: usize;
-        {
-            let mut playlist = PLAYLIST.lock().unwrap();
-            playlist.cur = playlist.cur + 1;
-            index = playlist.cur.try_into().unwrap();
-            if index >= playlist.list.len() {
-                return;
+    fn play_index_(player: &Arc<Self>, inc: i32) {
+        let mut playlist = PLAYLIST.lock().unwrap();
+        let new: i32 = i32::try_from(playlist.cur).unwrap() + inc;
+        if let std::result::Result::Ok(new) = usize::try_from(new) {
+            if new < playlist.list.len().try_into().unwrap() {
+                playlist.cur = new;
+                player.tx.send(PlayerAction::DownPlay(new)).unwrap();
             }
         }
-        player.tx.send(PlayerAction::DownPlay(index.try_into().unwrap())).unwrap();
     }
 
-    pub fn down_play(&self, index: u32) {
-       self.tx.send(PlayerAction::DownPlay(index)).unwrap();
+    pub fn down_play(&self, index: usize) {
+        PLAYLIST.lock().unwrap().cur = index;
+        self.tx.send(PlayerAction::DownPlay(index)).unwrap();
     }
 
     pub fn play(&self, path: String) {
@@ -108,5 +130,13 @@ impl Player {
 
     pub fn play_next(&self) {
        self.tx.send(PlayerAction::Next).unwrap();
+    }
+
+    pub fn play_prev(&self) {
+       self.tx.send(PlayerAction::Prev).unwrap();
+    }
+
+    pub fn pause(&self) {
+        self.tx.send(PlayerAction::PauseOrStart).unwrap();
     }
 }

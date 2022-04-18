@@ -28,7 +28,7 @@
           </object>
         </child>
         <child>
-          <object class="GtkBox">
+          <object class="GtkBox" id="player_control">
             <child>
               <object class="GtkButton" id="backward_button">
                 <property name="width_request">42</property>
