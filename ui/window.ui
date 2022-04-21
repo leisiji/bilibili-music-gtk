@@ -43,8 +43,8 @@
                 <property name="width_request">60</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
-                <property name="tooltip_text" translatable="yes">播放</property>
-                <property name="icon-name">media-playback-pause-symbolic</property>
+                <property name="tooltip_text" translatable="yes">暂停</property>
+                <property name="icon-name">media-playback-start-symbolic</property>
               </object>
             </child>
             <child>

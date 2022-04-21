@@ -3,11 +3,7 @@ use gtk::{prelude::*, Application, ApplicationWindow, TreeView};
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
-use crate::music::{
-    data::SongCollection,
-    model::PlayListModel,
-    utils::Player
-};
+use crate::music::{data::SongCollection, model::PlayListModel, utils::Player};
 
 pub(crate) struct App {
     rt: Arc<Runtime>,
@@ -30,17 +26,25 @@ impl App {
         window.set_application(Some(application));
 
         let player = Player::new(&app.rt, &builder);
+        let p = player.clone();
         tree.connect_row_activated(move |tree, _path, _col| {
             if let Some((model, iter)) = tree.selection().selected() {
-                let cur: usize = model.get(&iter, 2).get::<u32>().unwrap().try_into().unwrap();
-                player.down_play(cur);
+                let cur: usize = model
+                    .get(&iter, 2)
+                    .get::<u32>()
+                    .unwrap()
+                    .try_into()
+                    .unwrap();
+                p.down_play(cur);
             }
         });
 
         let list = playlist.clone();
         app.rt.spawn(async move {
+            list.start_refresh();
             let collection = SongCollection::new(&String::from("BV135411V7A5"));
-            collection.get_songs(list).await?;
+            collection.get_songs(&list).await?;
+            list.end_refresh();
             Ok(())
         });
     }

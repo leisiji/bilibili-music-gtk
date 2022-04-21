@@ -1,4 +1,7 @@
-use std::{path::PathBuf, sync::{Arc, Mutex}, cell::RefCell};
+use std::{
+    path::PathBuf,
+    sync::Mutex,
+};
 
 use lazy_static::lazy_static;
 use xdg::BaseDirectories;
@@ -30,7 +33,5 @@ lazy_static! {
             .create_cache_directory(BILIBILI_XDG.get_cache_home())
             .unwrap()
     };
-
     pub(crate) static ref PLAYLIST: Mutex<PlayList> = Mutex::new(PlayList::new());
 }
-

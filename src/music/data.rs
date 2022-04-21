@@ -63,7 +63,7 @@ impl SongCollection {
         SongCollection { bvid }
     }
 
-    pub async fn get_songs(&self, list: Arc<PlayListModel>) -> Result<()> {
+    pub async fn get_songs(&self, list: &Arc<PlayListModel>) -> Result<()> {
         const URL_COLLECTION_INFO: &str = "http://api.bilibili.com/x/web-interface/view?bvid=";
         let videoinfo = reqwest::get(format!("{}{}", URL_COLLECTION_INFO, self.bvid))
             .await?

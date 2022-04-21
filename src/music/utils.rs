@@ -1,9 +1,9 @@
-use std::sync::Arc;
+use std::{cell::RefCell, sync::Arc};
 
 use anyhow::Ok;
 use glib::{MainContext, Sender};
 use gstreamer_player::prelude::Cast;
-use gtk::{Builder, Button, prelude::*};
+use gtk::{prelude::*, Builder, Button};
 use tokio::runtime::Runtime;
 
 use super::{config::PLAYLIST, data::download_song};
@@ -13,46 +13,47 @@ enum PlayerAction {
     Play(String),
     Next,
     Prev,
-    PauseOrStart,
+    Pause,
+    PlayContinue,
 }
 
 pub(crate) struct Player {
     internal_player: gstreamer_player::Player,
     tx: Arc<Sender<PlayerAction>>,
     rt: Arc<Runtime>,
+    playing: RefCell<bool>,
+    pause_button: Button,
 }
 
 impl Player {
 
+    fn set_playing(player: &Arc<Self>, playing: bool) {
+        *player.playing.borrow_mut() = playing;
+        if playing {
+            player.pause_button.set_icon_name("media-playback-pause-symbolic");
+        } else {
+            player.pause_button.set_icon_name("media-playback-start-symbolic");
+        }
+    }
+
     fn handle(player: &Arc<Self>, action: PlayerAction) {
         match action {
             PlayerAction::DownPlay(index) => player.download_(index),
-            PlayerAction::Play(song) => player.play_(song),
-            PlayerAction::PauseOrStart => player.internal_player.pause(),
             PlayerAction::Next => Self::play_index_(player, 1),
             PlayerAction::Prev => Self::play_index_(player, -1),
+            PlayerAction::Play(song) => {
+                player.play_(song);
+                Self::set_playing(player, true);
+            },
+            PlayerAction::Pause => {
+                player.internal_player.pause();
+                Self::set_playing(player, false);
+            }
+            PlayerAction::PlayContinue => {
+                player.internal_player.play();
+                Self::set_playing(player, true);
+            },
         };
-    }
-
-    fn init_player_widget(player: &Arc<Self>, builder: &Builder) {
-        let backward: Button = builder.object("backward_button").unwrap();
-        let forward: Button = builder.object("forward_button").unwrap();
-        let pause_button: Button = builder.object("pause_button").unwrap();
-
-        let p = player.clone();
-        forward.connect_clicked(move |_| {
-            p.play_next();
-        });
-
-        let p = player.clone();
-        pause_button.connect_clicked(move |_| {
-            p.pause();
-        });
-
-        let p = player.clone();
-        backward.connect_clicked(move |_| {
-            p.play_prev();
-        });
     }
 
     pub fn new(rt: &Arc<Runtime>, builder: &Builder) -> Arc<Self> {
@@ -67,10 +68,16 @@ impl Player {
         let (tx, rx) = MainContext::channel(glib::PRIORITY_DEFAULT);
         let tx = Arc::new(tx);
 
+        let backward: Button = builder.object("backward_button").unwrap();
+        let forward: Button = builder.object("forward_button").unwrap();
+        let pause_button: Button = builder.object("pause_button").unwrap();
+
         let player = Arc::new(Player {
             internal_player: player,
             tx: tx.clone(),
             rt: rt.clone(),
+            playing: RefCell::new(false),
+            pause_button: pause_button.clone()
         });
 
         let rx_player = player.clone();
@@ -79,11 +86,29 @@ impl Player {
             glib::Continue(true)
         });
 
-        player.internal_player.connect_end_of_stream(move |_player| {
-            tx.send(PlayerAction::Next).unwrap();
+        /* init backward, forward, pause button click callback */
+        let p = player.clone();
+        forward.connect_clicked(move |_| {
+            p.play_next();
+        });
+        let p = player.clone();
+        pause_button.connect_clicked(move |_| {
+            if *p.playing.borrow() {
+                p.pause();
+            } else {
+                p.play_continue();
+            }
+        });
+        let p = player.clone();
+        backward.connect_clicked(move |_| {
+            p.play_prev();
         });
 
-        Self::init_player_widget(&player, builder);
+        player
+            .internal_player
+            .connect_end_of_stream(move |_player| {
+                tx.send(PlayerAction::Next).unwrap();
+            });
 
         player
     }
@@ -124,19 +149,19 @@ impl Player {
         self.tx.send(PlayerAction::DownPlay(index)).unwrap();
     }
 
-    pub fn play(&self, path: String) {
-        self.tx.send(PlayerAction::Play(path)).unwrap();
-    }
-
     pub fn play_next(&self) {
-       self.tx.send(PlayerAction::Next).unwrap();
+        self.tx.send(PlayerAction::Next).unwrap();
     }
 
     pub fn play_prev(&self) {
-       self.tx.send(PlayerAction::Prev).unwrap();
+        self.tx.send(PlayerAction::Prev).unwrap();
     }
 
     pub fn pause(&self) {
-        self.tx.send(PlayerAction::PauseOrStart).unwrap();
+        self.tx.send(PlayerAction::Pause).unwrap();
+    }
+
+    pub fn play_continue(&self) {
+        self.tx.send(PlayerAction::PlayContinue).unwrap();
     }
 }

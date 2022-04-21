@@ -1,4 +1,4 @@
-use super::config::{self, PLAYLIST};
+use super::config::PLAYLIST;
 use super::data::Song;
 use glib::StaticType;
 use gtk::prelude::*;
@@ -15,7 +15,6 @@ pub(crate) enum TreeViewCtrl {
 }
 
 impl PlayListModel {
-
     pub fn new(tree: &TreeView) -> Self {
         // name, duration, cur list index
         let store = ListStore::new(&[
@@ -58,16 +57,14 @@ impl PlayListModel {
     }
 
     pub fn add(&self, song: Song) {
-        self.tx.send(TreeViewCtrl::Add(song)).expect("Failed to add song");
+        self.tx
+            .send(TreeViewCtrl::Add(song))
+            .expect("Failed to add song");
     }
 
     fn add_song_(song: Song, store: &ListStore) {
         let iter = store.append();
-        let duration = format!(
-            "{:0>2}:{:0>2}",
-            song.duration / 60,
-            song.duration % 60
-        );
+        let duration = format!("{:0>2}:{:0>2}", song.duration / 60, song.duration % 60);
         let index: u32;
 
         {
@@ -76,17 +73,18 @@ impl PlayListModel {
             playlist.list.push(song.clone());
         }
 
-        store.set(
-            &iter,
-            &[(0, &song.name), (1, &duration), (2, &index)],
-        );
+        store.set(&iter, &[(0, &song.name), (1, &duration), (2, &index)]);
     }
 
     pub fn start_refresh(&self) {
-        self.tx.send(TreeViewCtrl::StartRefresh).expect("Failed to start");
+        self.tx
+            .send(TreeViewCtrl::StartRefresh)
+            .expect("Failed to start");
     }
 
     pub fn end_refresh(&self) {
-        self.tx.send(TreeViewCtrl::EndRefresh).expect("Failed to end");
+        self.tx
+            .send(TreeViewCtrl::EndRefresh)
+            .expect("Failed to end");
     }
 }
