@@ -96,10 +96,6 @@ impl SongCollection {
             handles.push(h);
         }
 
-        for h in handles {
-            h.await??;
-        }
-
         Ok(())
     }
 }

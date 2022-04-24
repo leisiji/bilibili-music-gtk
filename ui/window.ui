@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Generated with glade 3.38.2 -->
 <interface>
+  <requires lib="gtk+" version="4.0"/>
   <object class="GtkApplicationWindow" id="app_win">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
@@ -12,6 +13,8 @@
           <object class="GtkScrolledWindow" id="subpages_scrolled_window">
             <property name="can-focus">False</property>
             <property name="vexpand">True</property>
+            <property name="margin-top">8</property>
+            <property name="margin-bottom">8</property>
             <child>
               <object class="GtkTreeView" id="music_list">
                 <property name="headers_visible">False</property>

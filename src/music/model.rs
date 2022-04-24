@@ -9,9 +9,7 @@ pub(crate) struct PlayListModel {
 }
 
 pub(crate) enum TreeViewCtrl {
-    StartRefresh,
     Add(Song),
-    EndRefresh,
 }
 
 impl PlayListModel {
@@ -47,8 +45,6 @@ impl PlayListModel {
         rx.attach(None, move |ctrl| {
             match ctrl {
                 TreeViewCtrl::Add(song) => Self::add_song_(song, &store),
-                TreeViewCtrl::StartRefresh => todo!(),
-                TreeViewCtrl::EndRefresh => todo!(),
             };
             glib::Continue(true)
         });
@@ -74,17 +70,5 @@ impl PlayListModel {
         }
 
         store.set(&iter, &[(0, &song.name), (1, &duration), (2, &index)]);
-    }
-
-    pub fn start_refresh(&self) {
-        self.tx
-            .send(TreeViewCtrl::StartRefresh)
-            .expect("Failed to start");
-    }
-
-    pub fn end_refresh(&self) {
-        self.tx
-            .send(TreeViewCtrl::EndRefresh)
-            .expect("Failed to end");
     }
 }

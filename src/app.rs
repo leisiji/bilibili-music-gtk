@@ -41,10 +41,8 @@ impl App {
 
         let list = playlist.clone();
         app.rt.spawn(async move {
-            list.start_refresh();
             let collection = SongCollection::new(&String::from("BV135411V7A5"));
             collection.get_songs(&list).await?;
-            list.end_refresh();
             Ok(())
         });
     }
