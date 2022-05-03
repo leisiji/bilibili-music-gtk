@@ -150,6 +150,7 @@ dependencies = [
  "lazy_static",
  "reqwest",
  "serde",
+ "serde_json",
  "tokio",
  "xdg",
 ]

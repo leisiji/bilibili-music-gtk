@@ -1,4 +1,7 @@
-use std::{cell::RefCell, sync::Arc};
+use std::{
+    cell::RefCell,
+    sync::{Arc, Mutex},
+};
 
 use anyhow::Ok;
 use glib::{MainContext, Sender};
@@ -6,7 +9,7 @@ use gstreamer_player::prelude::Cast;
 use gtk::{prelude::*, Builder, Button};
 use tokio::runtime::Runtime;
 
-use super::{config::PLAYLIST, data::download_song};
+use super::{config::PlayList, data::download_song};
 
 enum PlayerAction {
     DownPlay(usize),
@@ -23,16 +26,24 @@ pub(crate) struct Player {
     rt: Arc<Runtime>,
     playing: RefCell<bool>,
     pause_button: Button,
+    playlist: RefCell<Arc<Mutex<PlayList>>>,
 }
 
 impl Player {
+    pub fn set_playlist(&self, playlist: &Arc<Mutex<PlayList>>) {
+        *self.playlist.borrow_mut() = playlist.clone();
+    }
 
     fn set_playing(player: &Arc<Self>, playing: bool) {
         *player.playing.borrow_mut() = playing;
         if playing {
-            player.pause_button.set_icon_name("media-playback-pause-symbolic");
+            player
+                .pause_button
+                .set_icon_name("media-playback-pause-symbolic");
         } else {
-            player.pause_button.set_icon_name("media-playback-start-symbolic");
+            player
+                .pause_button
+                .set_icon_name("media-playback-start-symbolic");
         }
     }
 
@@ -44,7 +55,7 @@ impl Player {
             PlayerAction::Play(song) => {
                 player.play_(song);
                 Self::set_playing(player, true);
-            },
+            }
             PlayerAction::Pause => {
                 player.internal_player.pause();
                 Self::set_playing(player, false);
@@ -52,11 +63,11 @@ impl Player {
             PlayerAction::PlayContinue => {
                 player.internal_player.play();
                 Self::set_playing(player, true);
-            },
+            }
         };
     }
 
-    pub fn new(rt: &Arc<Runtime>, builder: &Builder) -> Arc<Self> {
+    pub fn new(rt: &Arc<Runtime>, builder: &Builder, playlist: &Arc<Mutex<PlayList>>) -> Arc<Self> {
         gstreamer::init().expect("failed to init gstreamer");
 
         let dispatcher = gstreamer_player::PlayerGMainContextSignalDispatcher::new(None);
@@ -77,7 +88,8 @@ impl Player {
             tx: tx.clone(),
             rt: rt.clone(),
             playing: RefCell::new(false),
-            pause_button: pause_button.clone()
+            pause_button: pause_button.clone(),
+            playlist: RefCell::new(playlist.clone()),
         });
 
         let rx_player = player.clone();
@@ -120,7 +132,8 @@ impl Player {
     }
 
     fn download_(&self, index: usize) {
-        let playlist = PLAYLIST.lock().unwrap();
+        let playlist = self.playlist.borrow();
+        let playlist = playlist.lock().unwrap();
         if let Some(song) = playlist.list.get(index) {
             let url = song.play_url.clone();
             let name = song.name.clone();
@@ -134,7 +147,8 @@ impl Player {
     }
 
     fn play_index_(player: &Arc<Self>, inc: i32) {
-        let mut playlist = PLAYLIST.lock().unwrap();
+        let playlist = player.playlist.borrow();
+        let mut playlist = playlist.lock().unwrap();
         let new: i32 = i32::try_from(playlist.cur).unwrap() + inc;
         if let std::result::Result::Ok(new) = usize::try_from(new) {
             if new < playlist.list.len().try_into().unwrap() {
@@ -145,7 +159,8 @@ impl Player {
     }
 
     pub fn down_play(&self, index: usize) {
-        PLAYLIST.lock().unwrap().cur = index;
+        let playlist = self.playlist.borrow();
+        playlist.lock().unwrap().cur = index;
         self.tx.send(PlayerAction::DownPlay(index)).unwrap();
     }
 

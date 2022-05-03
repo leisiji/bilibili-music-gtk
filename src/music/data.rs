@@ -4,7 +4,9 @@ use reqwest::header;
 use serde::Deserialize;
 use std::borrow::Borrow;
 use std::fs::File;
+use std::io::BufReader;
 use std::io::Write;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use super::model::PlayListModel;
@@ -13,7 +15,7 @@ pub(crate) struct SongCollection {
     bvid: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Song {
     pub name: String,
     pub duration: u32,
@@ -63,7 +65,7 @@ impl SongCollection {
         SongCollection { bvid }
     }
 
-    pub async fn get_songs(&self, list: &Arc<PlayListModel>) -> Result<()> {
+    pub async fn get_songs(&self, playlist_model: &Arc<PlayListModel>) -> Result<()> {
         const URL_COLLECTION_INFO: &str = "http://api.bilibili.com/x/web-interface/view?bvid=";
         let videoinfo = reqwest::get(format!("{}{}", URL_COLLECTION_INFO, self.bvid))
             .await?
@@ -72,7 +74,7 @@ impl SongCollection {
         let mut handles = Vec::new();
 
         for page in videoinfo.data.pages {
-            let list = list.clone();
+            let playlist_model = playlist_model.clone();
             let bvid = self.bvid.clone();
             let h = tokio::spawn(async move {
                 let player_info = reqwest::get(format!(
@@ -89,7 +91,7 @@ impl SongCollection {
                         play_url: audio.baseUrl.clone(),
                         duration: page.duration,
                     };
-                    list.add(song);
+                    playlist_model.add(song);
                 }
                 Ok(())
             });
@@ -127,3 +129,8 @@ pub async fn download_song(url: &str, name: &str) -> Result<String> {
 
     Ok(s)
 }
+
+/*
+pub async fn write_config(path: &str) -> Result<()> {
+}
+*/

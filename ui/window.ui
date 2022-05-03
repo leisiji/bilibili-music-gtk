@@ -7,61 +7,120 @@
     <property name="can-focus">False</property>
     <property name="show-menubar">False</property>
     <child>
+
       <object class="GtkBox">
         <property name="orientation">vertical</property>
         <child>
-          <object class="GtkScrolledWindow" id="subpages_scrolled_window">
-            <property name="can-focus">False</property>
-            <property name="vexpand">True</property>
-            <property name="margin-top">8</property>
-            <property name="margin-bottom">8</property>
+          <object class="GtkBox">
+            <property name="orientation">horizontal</property>
+            <property name="margin-top">4</property>
+            <property name="margin-bottom">4</property>
             <child>
-              <object class="GtkTreeView" id="music_list">
-                <property name="headers_visible">False</property>
-                <property name="valign">start</property>
-                <property name="can-focus">True</property>
+              <object class="GtkButton" id="add-button">
+                <property name="width_request">42</property>
                 <property name="visible">True</property>
-                <property name="margin-top">8</property>
-                <property name="margin-bottom">8</property>
-                <child internal-child="selection">
-                  <object class="GtkTreeSelection"/>
+                <property name="can-focus">True</property>
+                <property name="tooltip-text" translatable="yes">添加</property>
+                <property name="icon-name">value-increase-symbolic</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton" id="search-button">
+                <property name="width_request">42</property>
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="tooltip-text" translatable="yes">添加</property>
+                <property name="icon-name">edit-find-symbolic</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkBox">
+            <property name="orientation">vertical</property>
+            <child>
+              <object class="GtkBox">
+              <property name="orientation">horizontal</property>
+                <child>
+                  <object class="GtkScrolledWindow">
+                    <property name="width_request">400</property>
+                    <property name="can-focus">False</property>
+                    <property name="vexpand">True</property>
+                    <child>
+                      <object class="GtkTreeView" id="bv_list">
+                        <property name="headers_visible">False</property>
+                        <property name="valign">start</property>
+                        <property name="can-focus">True</property>
+                        <property name="visible">True</property>
+                        <property name="margin-top">8</property>
+                        <property name="margin-bottom">8</property>
+                        <child internal-child="selection">
+                          <object class="GtkTreeSelection"/>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkScrolledWindow" id="subpages_scrolled_window">
+                    <property name="can-focus">False</property>
+                    <property name="vexpand">True</property>
+                    <property name="hexpand">True</property>
+                    <child>
+                      <object class="GtkTreeView" id="music_list">
+                        <property name="headers_visible">False</property>
+                        <property name="valign">start</property>
+                        <property name="can-focus">True</property>
+                        <property name="visible">True</property>
+                        <property name="margin-top">8</property>
+                        <property name="margin-bottom">8</property>
+                        <child internal-child="selection">
+                          <object class="GtkTreeSelection"/>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkBox" id="player_control">
+                <property name="orientation">horizontal</property>
+                <property name="margin-top">4</property>
+                <property name="margin-bottom">4</property>
+                <child>
+                  <object class="GtkButton" id="backward_button">
+                    <property name="width_request">42</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="tooltip-text" translatable="yes">上一曲</property>
+                    <property name="icon-name">media-skip-backward-symbolic</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton" id="pause_button">
+                    <property name="width_request">60</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="tooltip_text" translatable="yes">暂停</property>
+                    <property name="icon-name">media-playback-start-symbolic</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton" id="forward_button">
+                    <property name="width_request">42</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="tooltip-text" translatable="yes">下一曲</property>
+                    <property name="icon-name">media-skip-forward-symbolic</property>
+                  </object>
                 </child>
               </object>
             </child>
           </object>
         </child>
-        <child>
-          <object class="GtkBox" id="player_control">
-            <child>
-              <object class="GtkButton" id="backward_button">
-                <property name="width_request">42</property>
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="tooltip-text" translatable="yes">上一曲</property>
-                <property name="icon-name">media-skip-backward-symbolic</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkButton" id="pause_button">
-                <property name="width_request">60</property>
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="tooltip_text" translatable="yes">暂停</property>
-                <property name="icon-name">media-playback-start-symbolic</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkButton" id="forward_button">
-                <property name="width_request">42</property>
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="tooltip-text" translatable="yes">下一曲</property>
-                <property name="icon-name">media-skip-forward-symbolic</property>
-              </object>
-            </child>
-          </object>
-        </child>
       </object>
+
     </child>
   </object>
 
