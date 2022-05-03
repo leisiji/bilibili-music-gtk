@@ -9,7 +9,7 @@ use gstreamer_player::prelude::Cast;
 use gtk::{prelude::*, Builder, Button};
 use tokio::runtime::Runtime;
 
-use super::{config::PlayList, data::download_song};
+use super::{data::download_song, collectionlist::CollectionList};
 
 enum PlayerAction {
     DownPlay(usize),
@@ -26,14 +26,11 @@ pub(crate) struct Player {
     rt: Arc<Runtime>,
     playing: RefCell<bool>,
     pause_button: Button,
-    playlist: RefCell<Arc<Mutex<PlayList>>>,
+    collectionlist: Arc<Mutex<CollectionList>>,
+    index: RefCell<usize>,
 }
 
 impl Player {
-    pub fn set_playlist(&self, playlist: &Arc<Mutex<PlayList>>) {
-        *self.playlist.borrow_mut() = playlist.clone();
-    }
-
     fn set_playing(player: &Arc<Self>, playing: bool) {
         *player.playing.borrow_mut() = playing;
         if playing {
@@ -50,8 +47,8 @@ impl Player {
     fn handle(player: &Arc<Self>, action: PlayerAction) {
         match action {
             PlayerAction::DownPlay(index) => player.download_(index),
-            PlayerAction::Next => Self::play_index_(player, 1),
-            PlayerAction::Prev => Self::play_index_(player, -1),
+            PlayerAction::Next => player.play_index_(1),
+            PlayerAction::Prev => player.play_index_(-1),
             PlayerAction::Play(song) => {
                 player.play_(song);
                 Self::set_playing(player, true);
@@ -67,7 +64,7 @@ impl Player {
         };
     }
 
-    pub fn new(rt: &Arc<Runtime>, builder: &Builder, playlist: &Arc<Mutex<PlayList>>) -> Arc<Self> {
+    pub fn new(rt: &Arc<Runtime>, builder: &Builder, collectionlist: &Arc<Mutex<CollectionList>>) -> Arc<Self> {
         gstreamer::init().expect("failed to init gstreamer");
 
         let dispatcher = gstreamer_player::PlayerGMainContextSignalDispatcher::new(None);
@@ -82,6 +79,7 @@ impl Player {
         let backward: Button = builder.object("backward_button").unwrap();
         let forward: Button = builder.object("forward_button").unwrap();
         let pause_button: Button = builder.object("pause_button").unwrap();
+        let collectionlist = collectionlist.clone();
 
         let player = Arc::new(Player {
             internal_player: player,
@@ -89,7 +87,8 @@ impl Player {
             rt: rt.clone(),
             playing: RefCell::new(false),
             pause_button: pause_button.clone(),
-            playlist: RefCell::new(playlist.clone()),
+            collectionlist,
+            index: RefCell::new(0),
         });
 
         let rx_player = player.clone();
@@ -132,36 +131,31 @@ impl Player {
     }
 
     fn download_(&self, index: usize) {
-        let playlist = self.playlist.borrow();
-        let playlist = playlist.lock().unwrap();
-        if let Some(song) = playlist.list.get(index) {
-            let url = song.play_url.clone();
-            let name = song.name.clone();
-            let tx = self.tx.clone();
-            self.rt.spawn(async move {
-                let s = download_song(url.as_str(), name.as_str()).await?;
-                tx.send(PlayerAction::Play(s)).unwrap();
-                Ok(())
-            });
+        let collectionlist = self.collectionlist.lock().unwrap();
+        let song = collectionlist.get_song(index);
+        let url = song.play_url.clone();
+        let name = song.name.clone();
+        let tx = self.tx.clone();
+        self.rt.spawn(async move {
+            let s = download_song(url.as_str(), name.as_str()).await?;
+            tx.send(PlayerAction::Play(s)).unwrap();
+            Ok(())
+        });
+    }
+
+    pub(crate) fn play_index_(&self, inc: i32) {
+        let mut index = self.index.borrow_mut();
+        let new_index: i32 = *index as i32 + inc;
+        if new_index >= 0 {
+            *index = new_index as usize;
+            self.tx.send(PlayerAction::DownPlay(*index)).unwrap();
         }
     }
 
-    fn play_index_(player: &Arc<Self>, inc: i32) {
-        let playlist = player.playlist.borrow();
-        let mut playlist = playlist.lock().unwrap();
-        let new: i32 = i32::try_from(playlist.cur).unwrap() + inc;
-        if let std::result::Result::Ok(new) = usize::try_from(new) {
-            if new < playlist.list.len().try_into().unwrap() {
-                playlist.cur = new;
-                player.tx.send(PlayerAction::DownPlay(new)).unwrap();
-            }
-        }
-    }
-
-    pub fn down_play(&self, index: usize) {
-        let playlist = self.playlist.borrow();
-        playlist.lock().unwrap().cur = index;
-        self.tx.send(PlayerAction::DownPlay(index)).unwrap();
+    pub fn down_play(&self, i: usize) {
+        let mut index = self.index.borrow_mut();
+        *index = i;
+        self.tx.send(PlayerAction::DownPlay(i)).unwrap();
     }
 
     pub fn play_next(&self) {

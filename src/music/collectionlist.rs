@@ -1,36 +1,55 @@
 use std::{
     collections::BTreeMap,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex}, cell::RefCell
 };
 
-use crate::music::config::PlayList;
+use super::data::Song;
 
-use super::{config::parse_config, data::SongCollection, model::PlayListModel};
 
 pub(crate) struct CollectionList {
-    playlist_map: BTreeMap<String, Arc<Mutex<PlayList>>>,
-    cur_bvid: String,
+    playlist_map: BTreeMap<String, Vec<Song>>,
+    cur_bvid: RefCell<String>,
 }
 const FIRST_KEY: &str = "all";
 
 impl CollectionList {
-    pub fn new() -> Self {
-        let mut map: BTreeMap<String, Arc<Mutex<PlayList>>> = BTreeMap::new();
+    pub fn new() -> Arc<Mutex<Self>> {
+        let mut map: BTreeMap<String, Vec<Song>> = BTreeMap::new();
         map.insert(
             String::from(FIRST_KEY),
-            Arc::new(Mutex::new(PlayList::new())),
+            Vec::new(),
         );
 
-        CollectionList {
+        let collectionlist = CollectionList {
             playlist_map: map,
-            cur_bvid: String::from(FIRST_KEY),
-        }
+            cur_bvid: RefCell::new(String::from(FIRST_KEY)),
+        };
+
+        Arc::new(Mutex::new(collectionlist))
     }
 
-    pub fn get(&self, bvid: Option<&String>) -> Option<&Arc<Mutex<PlayList>>> {
-        match bvid {
-            None => self.playlist_map.get(FIRST_KEY),
-            Some(key) => self.playlist_map.get(key),
+    pub fn get_song(&self, index: usize) -> &Song {
+        let bvid = self.cur_bvid.borrow();
+        let playlist = self.playlist_map.get(&*bvid).unwrap();
+        return playlist.get(index).unwrap();
+    }
+
+    pub fn get_collection_size(&self) -> usize {
+        let bvid = self.cur_bvid.borrow();
+        let playlist = self.playlist_map.get(&*bvid).unwrap();
+        return playlist.len();
+    }
+
+    pub fn add_song(&mut self, bvid: &String, song: Song) {
+        let playlist = self.playlist_map.get_mut(bvid).unwrap();
+        playlist.push(song.clone());
+        let playlist = self.playlist_map.get_mut(FIRST_KEY).unwrap();
+        playlist.push(song);
+    }
+
+    pub fn add_collection(&mut self, bvid: &String) {
+        if !self.playlist_map.contains_key(bvid) {
+            self.playlist_map.insert(bvid.clone(), Vec::new());
         }
     }
 }

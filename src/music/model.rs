@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
-use super::config::{parse_config, PlayList};
+use super::collectionlist::CollectionList;
+use super::config::parse_config;
 use super::data::{Song, SongCollection};
 use anyhow::Ok;
 use glib::StaticType;
@@ -10,27 +11,31 @@ use tokio::runtime::Runtime;
 
 pub(crate) struct PlayListModel {
     tx: glib::Sender<TreeViewCtrl>,
-    playlist: Arc<Mutex<PlayList>>,
+    collectionlist: Arc<Mutex<CollectionList>>,
 }
 
 pub(crate) enum TreeViewCtrl {
-    Add(Song),
+    Add((String, Song)),
 }
 
 impl PlayListModel {
     pub fn init(playlist_model: &Arc<Self>, rt: &Runtime) {
         let config = parse_config().unwrap();
         for bv in config.bv_list {
-            let playlist_model = playlist_model.clone();
+            let model = playlist_model.clone();
+            {
+                let mut collectionlist = playlist_model.collectionlist.lock().unwrap();
+                collectionlist.add_collection(&bv.bvid);
+            }
             rt.spawn(async move {
                 let collection = SongCollection::new(bv.bvid.as_str());
-                collection.get_songs(&playlist_model).await?;
+                collection.get_songs(&model).await?;
                 Ok(())
             });
         }
     }
 
-    pub fn new(tree: &TreeView, playlist: &Arc<Mutex<PlayList>>) -> Arc<Self> {
+    pub fn new(tree: &TreeView, collectionlist: &Arc<Mutex<CollectionList>>) -> Arc<Self> {
         // name, duration, cur list index
         let store = ListStore::new(&[
             String::static_type(),
@@ -59,13 +64,13 @@ impl PlayListModel {
 
         let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
 
-        let playlist = playlist.clone();
-        let playlistmodel = Arc::new(PlayListModel { tx, playlist });
+        let collectionlist = collectionlist.clone();
+        let playlistmodel = Arc::new(PlayListModel { tx, collectionlist });
 
         let model = playlistmodel.clone();
         rx.attach(None, move |ctrl| {
             match ctrl {
-                TreeViewCtrl::Add(song) => model.add_song_(song, &store),
+                TreeViewCtrl::Add((bvid, song)) => model.add_song_(&bvid, song, &store),
             };
             glib::Continue(true)
         });
@@ -73,23 +78,22 @@ impl PlayListModel {
         playlistmodel
     }
 
-    pub fn add(&self, song: Song) {
+    pub fn add(&self, bvid: String, song: Song) {
         self.tx
-            .send(TreeViewCtrl::Add(song))
+            .send(TreeViewCtrl::Add((bvid, song)))
             .expect("Failed to add song");
     }
 
-    fn add_song_(&self, song: Song, store: &ListStore) {
+    fn add_song_(&self, bvid: &String, song: Song, store: &ListStore) {
         let iter = store.append();
         let duration = format!("{:0>2}:{:0>2}", song.duration / 60, song.duration % 60);
         let index: u32;
 
         {
-            let mut playlist = self.playlist.lock().unwrap();
-            index = playlist.list.len().try_into().unwrap();
-            playlist.list.push(song.clone());
+            let mut collectionlist = self.collectionlist.lock().unwrap();
+            index = collectionlist.get_collection_size() as u32;
+            store.set(&iter, &[(0, &song.name), (1, &duration), (2, &index)]);
+            collectionlist.add_song(&bvid, song);
         }
-
-        store.set(&iter, &[(0, &song.name), (1, &duration), (2, &index)]);
     }
 }

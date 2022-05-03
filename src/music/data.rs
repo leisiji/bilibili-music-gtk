@@ -4,9 +4,7 @@ use reqwest::header;
 use serde::Deserialize;
 use std::borrow::Borrow;
 use std::fs::File;
-use std::io::BufReader;
 use std::io::Write;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use super::model::PlayListModel;
@@ -91,7 +89,7 @@ impl SongCollection {
                         play_url: audio.baseUrl.clone(),
                         duration: page.duration,
                     };
-                    playlist_model.add(song);
+                    playlist_model.add(bvid, song);
                 }
                 Ok(())
             });
