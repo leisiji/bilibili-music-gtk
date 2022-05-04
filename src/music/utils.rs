@@ -9,7 +9,7 @@ use gstreamer_player::prelude::Cast;
 use gtk::{prelude::*, Builder, Button};
 use tokio::runtime::Runtime;
 
-use super::{data::download_song, collectionlist::CollectionList};
+use super::{collectionlist::CollectionList, data::download_song};
 
 enum PlayerAction {
     DownPlay(usize),
@@ -64,7 +64,11 @@ impl Player {
         };
     }
 
-    pub fn new(rt: &Arc<Runtime>, builder: &Builder, collectionlist: &Arc<Mutex<CollectionList>>) -> Arc<Self> {
+    pub fn new(
+        rt: &Arc<Runtime>,
+        builder: &Builder,
+        collectionlist: &Arc<Mutex<CollectionList>>,
+    ) -> Arc<Self> {
         gstreamer::init().expect("failed to init gstreamer");
 
         let dispatcher = gstreamer_player::PlayerGMainContextSignalDispatcher::new(None);

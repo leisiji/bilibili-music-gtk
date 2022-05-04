@@ -34,6 +34,7 @@ pub struct PageInfo {
 
 #[derive(Deserialize)]
 struct SongCollectionData {
+    title: String,
     pages: Vec<PageInfo>,
 }
 
@@ -71,6 +72,8 @@ impl SongCollection {
             .await?;
         let mut handles = Vec::new();
 
+        playlist_model.add_collection(&self.bvid, videoinfo.data.title);
+
         for page in videoinfo.data.pages {
             let playlist_model = playlist_model.clone();
             let bvid = self.bvid.clone();
@@ -89,7 +92,7 @@ impl SongCollection {
                         play_url: audio.baseUrl.clone(),
                         duration: page.duration,
                     };
-                    playlist_model.add(bvid, song);
+                    playlist_model.add_song(bvid, song);
                 }
                 Ok(())
             });
