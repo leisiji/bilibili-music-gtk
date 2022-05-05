@@ -18,22 +18,27 @@ pub(crate) struct PlayListModel {
 
 pub(crate) enum TreeViewCtrl {
     AddSong((u32, Song)),
-    AddCollection(String),
+    AddCollection(String, String),
 }
 
-struct TreeViewCtrlStore {
-    collectionlist_store: ListStore,
-    playlist_store: ListStore,
+struct TreeStore {
+    store: ListStore,
+    tree: TreeView,
+}
+
+struct TreeViewCtrlModel {
+    collectionlist: TreeStore,
+    playlist: TreeStore,
 }
 
 impl PlayListModel {
-    fn handle_ctrl(&self, ctrl: &TreeViewCtrl, store: &TreeViewCtrlStore) {
+    fn handle_ctrl(&self, ctrl: &TreeViewCtrl, model: &Arc<TreeViewCtrlModel>) {
         match ctrl {
             TreeViewCtrl::AddSong((index, song)) => {
-                self.add_song_(index, song, &store.playlist_store)
+                self.add_song_(index, song, &model.playlist.store)
             }
-            TreeViewCtrl::AddCollection(title) => {
-                self.add_collection_(title, &store.collectionlist_store)
+            TreeViewCtrl::AddCollection(title, bvid) => {
+                self.add_collection_(title, bvid, &model.collectionlist.store)
             }
         };
     }
@@ -50,12 +55,31 @@ impl PlayListModel {
         }
     }
 
-    fn init_collection_tree(_playlist_model: &Arc<Self>, builder: &Builder) -> ListStore {
-        let collectionlist_tree: TreeView = builder.object("collectionlist").unwrap();
+    fn connect_update_playlist(tree_model: &Arc<TreeViewCtrlModel>, playlist_model: &Arc<Self>) {
+        let playlist_model = playlist_model.clone();
+        let tree_model_strong = tree_model.clone();
+        tree_model.collectionlist.tree.connect_row_activated(move |tree, _path, _col| {
+            if let Some((model, iter)) = tree.selection().selected() {
+                let bvid: String = model.get(&iter, 1).get::<String>().unwrap();
+                let collectionlist = playlist_model.collectionlist.lock().unwrap();
+                let collection = collectionlist.get_collection(&bvid).unwrap();
+                let store = &tree_model_strong.playlist.store;
+                store.clear();
+                let mut index: u32 = 0;
+                for song in collection {
+                    playlist_model.add_song_(&index, song, store);
+                    index = index + 1;
+                }
+            }
+        });
+    }
 
-        let store = ListStore::new(&[String::static_type()]);
+    fn init_collection_tree(builder: &Builder) -> TreeStore {
+        let tree: TreeView = builder.object("collectionlist").unwrap();
 
-        collectionlist_tree.set_model(Some(&store));
+        let store = ListStore::new(&[String::static_type(), String::static_type()]);
+
+        tree.set_model(Some(&store));
 
         let title = CellRendererText::new();
         title.set_width(500);
@@ -64,31 +88,32 @@ impl PlayListModel {
             .build();
         col.pack_start(&title, true);
         col.add_attribute(&title, "text", 0);
-        collectionlist_tree.append_column(&col);
+        tree.append_column(&col);
 
         /* init the first collection that contians all songs */
         let collection = String::from("所有歌曲");
+        let bvid = String::from("all");
         let iter = store.append();
-        store.set(&iter, &[(0, &collection)]);
+        store.set(&iter, &[(0, &collection), (1, &bvid)]);
 
-        store
+        TreeStore { store, tree }
     }
 
     fn init_playlist_tree(
         builder: &Builder,
         rt: &Arc<Runtime>,
         collectionlist: &Arc<Mutex<CollectionList>>,
-    ) -> ListStore {
-        let playlist_tree: TreeView = builder.object("playlist").unwrap();
+    ) -> TreeStore {
+        let tree: TreeView = builder.object("playlist").unwrap();
 
         // name, duration, cur list index
-        let playlist_store = ListStore::new(&[
+        let store = ListStore::new(&[
             String::static_type(),
             String::static_type(),
             u32::static_type(),
         ]);
 
-        playlist_tree.set_model(Some(&playlist_store));
+        tree.set_model(Some(&store));
 
         let song_name = CellRendererText::new();
         song_name.set_width(500);
@@ -97,7 +122,7 @@ impl PlayListModel {
             .build();
         col.pack_start(&song_name, true);
         col.add_attribute(&song_name, "text", 0);
-        playlist_tree.append_column(&col);
+        tree.append_column(&col);
 
         let duration = CellRendererText::new();
         let col = TreeViewColumn::builder()
@@ -105,11 +130,11 @@ impl PlayListModel {
             .build();
         col.pack_start(&duration, true);
         col.add_attribute(&duration, "text", 1);
-        playlist_tree.append_column(&col);
+        tree.append_column(&col);
 
         let player = Player::new(rt, builder, collectionlist);
         let p = player.clone();
-        playlist_tree.connect_row_activated(move |tree, _path, _col| {
+        tree.connect_row_activated(move |tree, _path, _col| {
             if let Some((model, iter)) = tree.selection().selected() {
                 let cur: usize = model
                     .get(&iter, 2)
@@ -121,34 +146,36 @@ impl PlayListModel {
             }
         });
 
-        playlist_store
+        TreeStore { store, tree }
     }
 
     pub fn new(builder: &Builder) -> Arc<Self> {
         let collectionlist = CollectionList::new();
         let rt = Arc::new(Runtime::new().unwrap());
         let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
-        let playlistmodel = Arc::new(PlayListModel {
+        let playlist_model = Arc::new(PlayListModel {
             tx,
             collectionlist: collectionlist.clone(),
             rt: rt.clone(),
         });
 
-        let playlist_store = Self::init_playlist_tree(builder, &rt, &collectionlist);
-        let collectionlist_store = Self::init_collection_tree(&playlistmodel, builder);
+        let playlist = Self::init_playlist_tree(builder, &rt, &collectionlist);
+        let collectionlist = Self::init_collection_tree(builder);
 
-        let store = TreeViewCtrlStore {
-            collectionlist_store,
-            playlist_store,
-        };
+        let treeview_ctl_model = Arc::new(TreeViewCtrlModel {
+            collectionlist,
+            playlist,
+        });
 
-        let model = playlistmodel.clone();
+        Self::connect_update_playlist(&treeview_ctl_model, &playlist_model);
+
+        let model = playlist_model.clone();
         rx.attach(None, move |ctrl| {
-            model.handle_ctrl(&ctrl, &store);
+            model.handle_ctrl(&ctrl, &treeview_ctl_model);
             glib::Continue(true)
         });
 
-        playlistmodel
+        playlist_model
     }
 
     pub fn add_song(&self, bvid: String, song: Song) {
@@ -169,13 +196,13 @@ impl PlayListModel {
             collectionlist.add_collection(&bvid);
         }
         self.tx
-            .send(TreeViewCtrl::AddCollection(title))
+            .send(TreeViewCtrl::AddCollection(title, bvid.clone()))
             .expect("Failed to add collection");
     }
 
-    fn add_collection_(&self, title: &String, store: &ListStore) {
+    fn add_collection_(&self, title: &String, bvid: &String, store: &ListStore) {
         let iter = store.append();
-        store.set(&iter, &[(0, &title)])
+        store.set(&iter, &[(0, &title), (1, &bvid)])
     }
 
     fn add_song_(&self, index: &u32, song: &Song, store: &ListStore) {

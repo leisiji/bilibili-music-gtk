@@ -32,6 +32,10 @@ impl CollectionList {
         return playlist.get(index).unwrap();
     }
 
+    pub fn get_collection(&self, bvid: &String) -> Option<&Vec<Song>> {
+        return self.playlist_map.get(bvid);
+    }
+
     pub fn get_collection_size(&self) -> usize {
         let bvid = self.cur_bvid.borrow();
         let playlist = self.playlist_map.get(&*bvid).unwrap();
