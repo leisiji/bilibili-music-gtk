@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.38.2 -->
 <interface>
-  <requires lib="gtk+" version="4.0"/>
+  <requires lib="gtk" version="4.0"/>
   <object class="GtkApplicationWindow" id="app_win">
     <property name="visible">True</property>
-    <property name="can-focus">False</property>
     <property name="show-menubar">False</property>
     <child>
 
@@ -19,18 +17,11 @@
               <object class="GtkButton" id="add-button">
                 <property name="width_request">42</property>
                 <property name="visible">True</property>
-                <property name="can-focus">True</property>
                 <property name="tooltip-text" translatable="yes">添加</property>
                 <property name="icon-name">value-increase-symbolic</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkButton" id="search-button">
-                <property name="width_request">42</property>
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="tooltip-text" translatable="yes">添加</property>
-                <property name="icon-name">edit-find-symbolic</property>
+                <style>
+                  <class name="flat"/>
+                </style>
               </object>
             </child>
           </object>
@@ -40,46 +31,48 @@
             <property name="orientation">vertical</property>
             <child>
               <object class="GtkBox">
-              <property name="orientation">horizontal</property>
+                <property name="orientation">horizontal</property>
                 <child>
                   <object class="GtkScrolledWindow">
-                    <property name="width_request">400</property>
-                    <property name="can-focus">False</property>
-                    <property name="vexpand">True</property>
-                    <child>
+                    <property name="hscrollbar-policy">never</property>
+                    <property name="vscrollbar-policy">automatic</property>
+                    <property name="propagate-natural-height">true</property>
+                    <property name="propagate-natural-width">true</property>
+                    <property name="max-content-width">400</property>
+                    <property name="vexpand">true</property>
+                    <property name="child">
                       <object class="GtkTreeView" id="collectionlist">
                         <property name="headers_visible">False</property>
                         <property name="valign">start</property>
-                        <property name="can-focus">True</property>
-                        <property name="visible">True</property>
                         <property name="margin-top">8</property>
                         <property name="margin-bottom">8</property>
+                        <property name="margin-start">6</property>
                         <property name="activate_on_single_click">True</property>
-                        <child internal-child="selection">
-                          <object class="GtkTreeSelection"/>
-                        </child>
+                        <property name="hexpand">false</property>
+                        <style>
+                          <class name="navigation-sidebar"/>
+                        </style>
                       </object>
-                    </child>
+                    </property>
                   </object>
                 </child>
                 <child>
-                  <object class="GtkScrolledWindow" id="subpages_scrolled_window">
-                    <property name="can-focus">False</property>
+                  <object class="GtkScrolledWindow" id="playlist_window">
+                    <property name="margin-start">6</property>
                     <property name="vexpand">True</property>
                     <property name="hexpand">True</property>
-                    <child>
+                    <property name="hscrollbar-policy">never</property>
+                    <property name="vscrollbar-policy">automatic</property>
+                    <property name="propagate-natural-height">true</property>
+                    <property name="propagate-natural-width">true</property>
+                    <property name="child">
                       <object class="GtkTreeView" id="playlist">
                         <property name="headers_visible">False</property>
                         <property name="valign">start</property>
-                        <property name="can-focus">True</property>
-                        <property name="visible">True</property>
                         <property name="margin-top">8</property>
                         <property name="margin-bottom">8</property>
-                        <child internal-child="selection">
-                          <object class="GtkTreeSelection"/>
-                        </child>
                       </object>
-                    </child>
+                    </property>
                   </object>
                 </child>
               </object>
@@ -92,28 +85,31 @@
                 <child>
                   <object class="GtkButton" id="backward_button">
                     <property name="width_request">42</property>
-                    <property name="visible">True</property>
-                    <property name="can-focus">True</property>
                     <property name="tooltip-text" translatable="yes">上一曲</property>
                     <property name="icon-name">media-skip-backward-symbolic</property>
+                    <style>
+                      <class name="flat"/>
+                    </style>
                   </object>
                 </child>
                 <child>
                   <object class="GtkButton" id="pause_button">
                     <property name="width_request">60</property>
-                    <property name="visible">True</property>
-                    <property name="can-focus">True</property>
                     <property name="tooltip_text" translatable="yes">暂停</property>
                     <property name="icon-name">media-playback-start-symbolic</property>
+                    <style>
+                      <class name="flat"/>
+                    </style>
                   </object>
                 </child>
                 <child>
                   <object class="GtkButton" id="forward_button">
                     <property name="width_request">42</property>
-                    <property name="visible">True</property>
-                    <property name="can-focus">True</property>
                     <property name="tooltip-text" translatable="yes">下一曲</property>
                     <property name="icon-name">media-skip-forward-symbolic</property>
+                    <style>
+                      <class name="flat"/>
+                    </style>
                   </object>
                 </child>
               </object>

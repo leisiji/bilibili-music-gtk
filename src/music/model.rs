@@ -76,7 +76,6 @@ impl PlayListModel {
 
     fn init_collection_tree(builder: &Builder) -> TreeStore {
         let tree: TreeView = builder.object("collectionlist").unwrap();
-
         let store = ListStore::new(&[String::static_type(), String::static_type()]);
 
         tree.set_model(Some(&store));
