@@ -38,11 +38,14 @@ lazy_static! {
             .unwrap()
     };
     pub(crate) static ref CONFIG_FILE: PathBuf = {
-        let file = BILIBILI_XDG.get_config_home().join("config.json");
-        if !file.exists() {
-            BILIBILI_XDG.create_cache_directory(file).unwrap()
-        } else {
-            file
+        let dir = BILIBILI_XDG.get_config_home();
+        let file = dir.join("config.json");
+        if !dir.exists() {
+            BILIBILI_XDG.create_cache_directory(dir).unwrap();
+            if !file.exists() {
+                File::create(file.clone()).unwrap();
+            }
         }
+        file
     };
 }

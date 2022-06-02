@@ -5,8 +5,7 @@ use super::config::parse_config;
 use super::data::{Song, SongCollection};
 use super::utils::Player;
 use anyhow::Ok;
-use glib::StaticType;
-use gtk::{prelude::CellLayoutExt, CellRendererText, ListStore, TreeView, TreeViewColumn};
+use gtk::{CellRendererText, ListStore, TreeView, TreeViewColumn};
 use gtk::{prelude::*, Builder};
 use tokio::runtime::Runtime;
 
@@ -44,14 +43,16 @@ impl PlayListModel {
     }
 
     pub fn init(playlist_model: &Arc<Self>) {
-        let config = parse_config().unwrap();
-        for bv in config.bv_list {
-            let model = playlist_model.clone();
-            playlist_model.rt.spawn(async move {
-                let collection = SongCollection::new(bv.bvid.as_str());
-                collection.get_songs(&model).await?;
-                Ok(())
-            });
+        let config = parse_config();
+        if let Result::Ok(config) = config {
+            for bv in config.bv_list {
+                let model = playlist_model.clone();
+                playlist_model.rt.spawn(async move {
+                    let collection = SongCollection::new(bv.bvid.as_str());
+                    collection.get_songs(&model).await?;
+                    Ok(())
+                });
+            }
         }
     }
 
@@ -60,7 +61,7 @@ impl PlayListModel {
         let tree_model_strong = tree_model.clone();
         tree_model.collectionlist.tree.connect_row_activated(move |tree, _path, _col| {
             if let Some((model, iter)) = tree.selection().selected() {
-                let bvid: String = model.get(&iter, 1).get::<String>().unwrap();
+                let bvid: String = model.get::<String>(&iter, 1);
                 let collectionlist = playlist_model.collectionlist.lock().unwrap();
                 let collection = collectionlist.get_collection(&bvid).unwrap();
                 let store = &tree_model_strong.playlist.store;
@@ -136,9 +137,7 @@ impl PlayListModel {
         tree.connect_row_activated(move |tree, _path, _col| {
             if let Some((model, iter)) = tree.selection().selected() {
                 let cur: usize = model
-                    .get(&iter, 2)
-                    .get::<u32>()
-                    .unwrap()
+                    .get::<u32>(&iter, 2)
                     .try_into()
                     .unwrap();
                 p.down_play(cur);
@@ -183,6 +182,10 @@ impl PlayListModel {
             let mut collectionlist = self.collectionlist.lock().unwrap();
             index = collectionlist.get_collection_size() as u32;
             collectionlist.add_song(&bvid, &song);
+            let cur_bvid = collectionlist.cur_bvid.borrow();
+            if *cur_bvid != "all" && *cur_bvid != bvid {
+                return;
+            }
         }
         self.tx
             .send(TreeViewCtrl::AddSong((index, song)))

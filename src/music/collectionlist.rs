@@ -8,7 +8,7 @@ use super::data::Song;
 
 pub(crate) struct CollectionList {
     playlist_map: BTreeMap<String, Vec<Song>>,
-    cur_bvid: RefCell<String>,
+    pub cur_bvid: RefCell<String>,
 }
 const FIRST_KEY: &str = "all";
 

@@ -87,7 +87,7 @@ impl SongCollection {
                 .await?;
 
                 if let Some(audio) = player_info.data.dash.audio.get(0) {
-                    let song: Song = Song {
+                    let song = Song {
                         name: page.part.clone(),
                         play_url: audio.baseUrl.clone(),
                         duration: page.duration,

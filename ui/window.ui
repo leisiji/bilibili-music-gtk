@@ -1,13 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <requires lib="gtk" version="4.0"/>
-  <object class="GtkApplicationWindow" id="app_win">
+  <object class="AdwApplicationWindow" id="app_win">
     <property name="visible">True</property>
     <property name="show-menubar">False</property>
     <child>
 
       <object class="GtkBox">
         <property name="orientation">vertical</property>
+
+        <child>
+          <object class="AdwHeaderBar">
+          </object>
+        </child>
+
+
         <child>
           <object class="GtkBox">
             <property name="orientation">horizontal</property>
@@ -22,6 +29,32 @@
                 <style>
                   <class name="flat"/>
                 </style>
+              </object>
+            </child>
+            <child>
+              <object class="GtkPopover" id="bv-input">
+                <property name="width_request">137</property>
+                <child>
+                  <object class="GtkBox">
+                    <property name="orientation">horizontal</property>
+                    <child>
+                      <object class="GtkTextView">
+                        <property name="editable">True</property>
+                        <property name="cursor-visible">True</property>
+                        <style>
+                          <class name="flat"/>
+                        </style>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkButton">
+                        <style>
+                          <class name="flat"/>
+                        </style>
+                      </object>
+                    </child>
+                  </object>
+                </child>
               </object>
             </child>
           </object>
@@ -42,6 +75,7 @@
                     <property name="vexpand">true</property>
                     <property name="child">
                       <object class="GtkTreeView" id="collectionlist">
+                        <property name="hover-selection">True</property>
                         <property name="headers_visible">False</property>
                         <property name="valign">start</property>
                         <property name="margin-top">8</property>
@@ -71,6 +105,8 @@
                         <property name="valign">start</property>
                         <property name="margin-top">8</property>
                         <property name="margin-bottom">8</property>
+                        <property name="fixed-height-mode">True</property>
+                        <property name="hover-selection">True</property>
                       </object>
                     </property>
                   </object>
