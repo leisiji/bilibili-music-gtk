@@ -1,25 +1,25 @@
-use std::fs::File;
 use std::io::BufReader;
 use std::path::PathBuf;
+use std::{fs::File, io::BufWriter};
 
 use anyhow::{Ok, Result};
 use lazy_static::lazy_static;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use xdg::BaseDirectories;
 
 pub(crate) static BILIBILI_REFERER: &str = "https://www.bilibili.com/";
 pub(crate) static BILIBILI_UA: &str = "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36 Edg/98.0.1108.56";
 const APP_DIR: &str = "bilibili-music-gtk4";
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct Bv {
     pub bvid: String,
     pub blacklist: Vec<u32>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct Config {
-    pub bv_list: Vec<Bv>,
+    pub(crate) bv_list: Vec<Bv>,
 }
 
 pub fn parse_config() -> Result<Config> {
@@ -27,6 +27,30 @@ pub fn parse_config() -> Result<Config> {
     let buf_reader = BufReader::new(file);
     let config: Config = serde_json::from_reader(buf_reader)?;
     Ok(config)
+}
+
+pub fn write_config(config: &Config) -> Result<()> {
+    let file = File::open(&*CONFIG_FILE)?;
+    let buf_writer = BufWriter::new(file);
+    serde_json::to_writer(buf_writer, config)?;
+    Ok(())
+}
+
+impl Bv {
+    pub fn new(bv: &String) -> Self {
+        Bv {
+            bvid: bv.clone(),
+            blacklist: Vec::new(),
+        }
+    }
+}
+
+impl Config {
+    pub fn new() -> Self {
+        Config {
+            bv_list: Vec::new()
+        }
+    }
 }
 
 lazy_static! {

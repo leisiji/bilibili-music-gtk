@@ -5,14 +5,14 @@ use super::config::parse_config;
 use super::data::{Song, SongCollection};
 use super::utils::Player;
 use anyhow::Ok;
-use gtk::{CellRendererText, ListStore, TreeView, TreeViewColumn};
 use gtk::{prelude::*, Builder};
+use gtk::{CellRendererText, ListStore, TreeView, TreeViewColumn};
 use tokio::runtime::Runtime;
 
-pub(crate) struct PlayListModel {
+pub struct PlayListModel {
     tx: glib::Sender<TreeViewCtrl>,
     collectionlist: Arc<Mutex<CollectionList>>,
-    rt: Arc<Runtime>,
+    pub(crate) rt: Arc<Runtime>,
 }
 
 pub(crate) enum TreeViewCtrl {
@@ -59,20 +59,23 @@ impl PlayListModel {
     fn connect_update_playlist(tree_model: &Arc<TreeViewCtrlModel>, playlist_model: &Arc<Self>) {
         let playlist_model = playlist_model.clone();
         let tree_model_strong = tree_model.clone();
-        tree_model.collectionlist.tree.connect_row_activated(move |tree, _path, _col| {
-            if let Some((model, iter)) = tree.selection().selected() {
-                let bvid: String = model.get::<String>(&iter, 1);
-                let collectionlist = playlist_model.collectionlist.lock().unwrap();
-                let collection = collectionlist.get_collection(&bvid).unwrap();
-                let store = &tree_model_strong.playlist.store;
-                store.clear();
-                let mut index: u32 = 0;
-                for song in collection {
-                    playlist_model.add_song_(&index, song, store);
-                    index = index + 1;
+        tree_model
+            .collectionlist
+            .tree
+            .connect_row_activated(move |tree, _path, _col| {
+                if let Some((model, iter)) = tree.selection().selected() {
+                    let bvid: String = model.get::<String>(&iter, 1);
+                    let collectionlist = playlist_model.collectionlist.lock().unwrap();
+                    let collection = collectionlist.get_collection(&bvid).unwrap();
+                    let store = &tree_model_strong.playlist.store;
+                    store.clear();
+                    let mut index: u32 = 0;
+                    for song in collection {
+                        playlist_model.add_song_(&index, song, store);
+                        index = index + 1;
+                    }
                 }
-            }
-        });
+            });
     }
 
     fn init_collection_tree(builder: &Builder) -> TreeStore {
@@ -136,10 +139,7 @@ impl PlayListModel {
         let p = player.clone();
         tree.connect_row_activated(move |tree, _path, _col| {
             if let Some((model, iter)) = tree.selection().selected() {
-                let cur: usize = model
-                    .get::<u32>(&iter, 2)
-                    .try_into()
-                    .unwrap();
+                let cur: usize = model.get::<u32>(&iter, 2).try_into().unwrap();
                 p.down_play(cur);
             }
         });

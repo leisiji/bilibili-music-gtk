@@ -1,7 +1,7 @@
 use adw::StyleManager;
 use gtk::{prelude::*, Application, ApplicationWindow};
 
-use crate::music::{model::PlayListModel, input::init_input};
+use crate::music::{input::init_input, model::PlayListModel};
 
 fn app_init(application: &gtk::Application) {
     let glade_src = include_str!("../ui/window.ui");
@@ -10,10 +10,10 @@ fn app_init(application: &gtk::Application) {
     let window: ApplicationWindow = builder.object("app_win").unwrap();
     window.set_application(Some(application));
 
-    init_input(&builder);
-
     let playlist_model = PlayListModel::new(&builder);
     PlayListModel::init(&playlist_model);
+
+    init_input(&builder, &playlist_model);
 }
 
 pub(crate) fn run() {
