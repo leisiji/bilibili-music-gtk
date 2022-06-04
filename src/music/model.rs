@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use super::collectionlist::CollectionList;
+use super::collectionlist::{CollectionList, FIRST_KEY};
 use super::config::parse_config;
 use super::data::{Song, SongCollection};
 use super::utils::Player;
@@ -74,6 +74,7 @@ impl PlayListModel {
                         playlist_model.add_song_(&index, song, store);
                         index = index + 1;
                     }
+                    *collectionlist.cur_bvid.borrow_mut() = bvid;
                 }
             });
     }
@@ -95,7 +96,7 @@ impl PlayListModel {
 
         /* init the first collection that contians all songs */
         let collection = String::from("所有歌曲");
-        let bvid = String::from("all");
+        let bvid = String::from(FIRST_KEY);
         let iter = store.append();
         store.set(&iter, &[(0, &collection), (1, &bvid)]);
 
@@ -192,13 +193,13 @@ impl PlayListModel {
             .expect("Failed to add song");
     }
 
-    pub fn add_collection(&self, bvid: &String, title: String) {
+    pub fn add_collection(&self, bvid: &String, title: &String) {
         {
             let mut collectionlist = self.collectionlist.lock().unwrap();
             collectionlist.add_collection(&bvid);
         }
         self.tx
-            .send(TreeViewCtrl::AddCollection(title, bvid.clone()))
+            .send(TreeViewCtrl::AddCollection(title.clone(), bvid.clone()))
             .expect("Failed to add collection");
     }
 

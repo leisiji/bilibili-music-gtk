@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use anyhow::Ok;
 use gtk::{prelude::*, Builder, Button, Entry, Popover};
 
 use super::{
@@ -11,7 +12,7 @@ use super::{
 pub fn add_bv(bv: &String) {
     let res = parse_config();
     match res {
-        Ok(mut config) => {
+        Result::Ok(mut config) => {
             config.bv_list.push(Bv::new(bv));
             write_config(&config).unwrap();
         }
@@ -38,12 +39,14 @@ pub fn init_input(builder: &Builder, model: &Arc<PlayListModel>) {
 
         let model_strong = model.clone();
         model.rt.spawn(async move {
-            let collection = SongCollection::new(bv.as_str());
-            let res = collection.get_songs(&model_strong).await;
+            let res = SongCollection::get_bvid_resp(&bv).await;
             match res {
-                Ok(()) => add_bv(&bv),
+                Result::Ok(_resp) => add_bv(&bv),
                 _error => println!("wrong bv"),
-            }
+            };
+            let collection = SongCollection::new(bv.as_str());
+            collection.get_songs(&model_strong).await?;
+            Ok(())
         });
     });
 }

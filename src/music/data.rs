@@ -1,11 +1,12 @@
 use crate::music::config::{self, CACHE_DIR};
 use anyhow::{Ok, Result};
-use reqwest::header;
+use reqwest::{header, Response};
 use serde::Deserialize;
 use std::borrow::Borrow;
 use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
+use log::warn;
 
 use super::model::PlayListModel;
 
@@ -64,17 +65,21 @@ impl SongCollection {
         SongCollection { bvid }
     }
 
-    pub async fn get_songs(&self, playlist_model: &Arc<PlayListModel>) -> Result<()> {
+    pub async fn get_bvid_resp(bvid: &String) -> Result<Response> {
         const URL_COLLECTION_INFO: &str = "http://api.bilibili.com/x/web-interface/view?bvid=";
-        let videoinfo = reqwest::get(format!("{}{}", URL_COLLECTION_INFO, self.bvid))
-            .await?
-            .json::<VideoInfo>()
-            .await?;
-        let mut handles = Vec::new();
+        let resp = reqwest::get(format!("{}{}", URL_COLLECTION_INFO, bvid)).await?;
+        Ok(resp)
+    }
 
-        playlist_model.add_collection(&self.bvid, videoinfo.data.title);
+    pub async fn get_songs(&self, playlist_model: &Arc<PlayListModel>) -> Result<()> {
+        let videoinfo = Self::get_bvid_resp(&self.bvid).await?.json::<VideoInfo>().await?;
+        playlist_model.add_collection(&self.bvid, &videoinfo.data.title);
+
+        let mut handles;
+        let mut i: usize = 0;
 
         for page in videoinfo.data.pages {
+            handles = Vec::new();
             let playlist_model = playlist_model.clone();
             let bvid = self.bvid.clone();
             let h = tokio::spawn(async move {
@@ -96,7 +101,18 @@ impl SongCollection {
                 }
                 Ok(())
             });
+
+            /* limit the total request */
             handles.push(h);
+            i = i + 1;
+            if i % 10 == 0 {
+                for h in handles {
+                    let res = h.await?;
+                    if let Err(err) = res {
+                        warn!("Failed to get song: {:?}", err);
+                    }
+                }
+            }
         }
 
         Ok(())

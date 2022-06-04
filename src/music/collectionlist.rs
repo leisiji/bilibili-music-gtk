@@ -10,7 +10,7 @@ pub(crate) struct CollectionList {
     playlist_map: BTreeMap<String, Vec<Song>>,
     pub cur_bvid: RefCell<String>,
 }
-const FIRST_KEY: &str = "all";
+pub const FIRST_KEY: &str = "all";
 
 impl CollectionList {
     pub fn new() -> Arc<Mutex<Self>> {
