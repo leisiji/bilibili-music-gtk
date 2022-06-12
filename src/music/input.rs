@@ -13,8 +13,18 @@ pub fn add_bv(bv: &String) {
     let res = parse_config();
     match res {
         Result::Ok(mut config) => {
-            config.bv_list.push(Bv::new(bv));
-            write_config(&config).unwrap();
+            let mut i: usize = 0;
+            let len = config.bv_list.len();
+            while i < len {
+                if *bv == config.bv_list.get(i).unwrap().bvid {
+                    break;
+                }
+                i = i + 1;
+            }
+            if i == len {
+                config.bv_list.push(Bv::new(bv));
+                write_config(&config).unwrap();
+            }
         }
         _error => {
             let mut config = Config::new();

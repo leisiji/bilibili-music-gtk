@@ -6,7 +6,7 @@ use std::{
 use anyhow::Ok;
 use glib::{MainContext, Sender};
 use gstreamer_player::prelude::Cast;
-use gtk::{prelude::*, Builder, Button};
+use gtk::{prelude::*, Builder, Button, Scale};
 use tokio::runtime::Runtime;
 
 use super::{collectionlist::CollectionList, data::download_song};
@@ -17,6 +17,8 @@ enum PlayerAction {
     Next,
     Prev,
     Pause,
+    UpdateSeek(u64),
+    SetRange(u64),
     PlayContinue,
 }
 
@@ -26,6 +28,7 @@ pub(crate) struct Player {
     rt: Arc<Runtime>,
     playing: RefCell<bool>,
     pause_button: Button,
+    seek: Scale,
     collectionlist: Arc<Mutex<CollectionList>>,
     index: RefCell<usize>,
 }
@@ -61,6 +64,11 @@ impl Player {
                 player.internal_player.play();
                 Self::set_playing(player, true);
             }
+            PlayerAction::UpdateSeek(pos) => player.seek.set_value(pos as f64),
+            PlayerAction::SetRange(range) => {
+                player.seek.set_range(0.0, range as f64);
+                player.seek.set_value(0.0);
+            },
         };
     }
 
@@ -83,6 +91,7 @@ impl Player {
         let backward: Button = builder.object("backward_button").unwrap();
         let forward: Button = builder.object("forward_button").unwrap();
         let pause_button: Button = builder.object("pause_button").unwrap();
+        let seek: Scale = builder.object("seek").unwrap();
         let collectionlist = collectionlist.clone();
 
         let player = Arc::new(Player {
@@ -91,6 +100,7 @@ impl Player {
             rt: rt.clone(),
             playing: RefCell::new(false),
             pause_button: pause_button.clone(),
+            seek,
             collectionlist,
             index: RefCell::new(0),
         });
@@ -119,11 +129,24 @@ impl Player {
             p.play_prev();
         });
 
+        let tx_player = tx.clone();
         player
             .internal_player
             .connect_end_of_stream(move |_player| {
-                tx.send(PlayerAction::Next).unwrap();
+                tx_player.send(PlayerAction::Next).unwrap();
             });
+
+        let tx_player = tx.clone();
+        player.internal_player.connect_duration_changed(move |_, duration| {
+            let time = duration.unwrap().seconds();
+            tx_player.send(PlayerAction::SetRange(time)).unwrap();
+        });
+
+        let tx_player = tx.clone();
+        player.internal_player.connect_position_updated(move |_, time| {
+            let time = time.unwrap().seconds();
+            tx_player.send(PlayerAction::UpdateSeek(time)).unwrap();
+        });
 
         player
     }

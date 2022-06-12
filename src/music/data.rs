@@ -146,8 +146,3 @@ pub async fn download_song(url: &str, name: &str) -> Result<String> {
 
     Ok(s)
 }
-
-/*
-pub async fn write_config(path: &str) -> Result<()> {
-}
-*/
