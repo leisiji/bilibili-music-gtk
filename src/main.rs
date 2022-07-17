@@ -1,10 +1,15 @@
-mod app;
-mod music;
+mod application;
+mod config;
+mod playback_control;
+mod window;
+mod playlist;
+mod audio;
+
+use application::Application;
+use gtk::{gio, prelude::*};
 
 fn main() {
-    pretty_env_logger::init();
-
-    glib::set_application_name("bilibili-music-gtk4");
-    glib::set_prgname(Some("bilibili-music-gtk4"));
-    app::run();
+    gio::resources_register_include!("bilibili-music-gtk4.gresource").unwrap();
+    let app = Application::new();
+    app.run();
 }

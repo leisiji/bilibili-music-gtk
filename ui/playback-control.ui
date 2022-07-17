@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+
+  <object class="GtkAdjustment" id="seek-adjustment">
+    <property name="upper">1.0</property>
+  </object>
+
+  <template class="BiliBiliPlaybackControl" parent="GtkWidget">
+    <child>
+
+    <object class="GtkBox" id="playback_box">
+      <property name="orientation">horizontal</property>
+      <child>
+        <object class="GtkButton" id="backward_btn">
+          <property name="width_request">42</property>
+          <property name="tooltip-text" translatable="yes">上一曲</property>
+          <property name="icon-name">media-skip-backward-symbolic</property>
+          <style>
+            <class name="flat"/>
+          </style>
+        </object>
+      </child>
+      <child>
+        <object class="GtkButton" id="pause_btn">
+          <property name="width_request">60</property>
+          <property name="tooltip_text" translatable="yes">暂停</property>
+          <property name="icon-name">media-playback-start-symbolic</property>
+          <style>
+            <class name="flat"/>
+          </style>
+        </object>
+      </child>
+      <child>
+        <object class="GtkButton" id="forward_btn">
+          <property name="width_request">42</property>
+          <property name="tooltip-text" translatable="yes">下一曲</property>
+          <property name="icon-name">media-skip-forward-symbolic</property>
+          <style>
+            <class name="flat"/>
+          </style>
+        </object>
+      </child>
+      <child>
+        <object class="GtkScale" id="seek">
+          <property name="hexpand">True</property>
+          <property name="adjustment">seek-adjustment</property>
+        </object>
+      </child>
+    </object>
+
+    </child>
+  </template>
+</interface>

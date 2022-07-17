@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/org/bilibili/music/">
+    <file compressed="true" preprocess="xml-stripblanks">window.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">playback-control.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">playlist.ui</file>
+  </gresource>
+</gresources>

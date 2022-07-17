@@ -2,6 +2,7 @@
 <interface>
   <requires lib="gtk" version="4.0"/>
 
+  <!--Add popover-->
   <object class="GtkPopover" id="popover-add">
     <child>
       <object class="GtkBox">
@@ -26,146 +27,93 @@
     </child>
   </object>
 
-  <object class="GtkAdjustment" id="seek-adjustment">
-    <property name="upper">1.0</property>
-  </object>
-
-  <object class="AdwApplicationWindow" id="app_win">
+  <!--BiliBiliMusicWin-->
+  <template class="BiliBiliMusicWin" parent="AdwApplicationWindow">
     <property name="visible">True</property>
     <property name="show-menubar">False</property>
     <property name="width_request">1500</property>
     <property name="height_request">800</property>
-    <child>
 
-      <object class="GtkBox">
-        <property name="orientation">vertical</property>
-
-        <child>
-          <object class="AdwHeaderBar" id="header">
-          </object>
-        </child>
-
-        <child>
-          <object class="GtkBox">
-            <property name="orientation">horizontal</property>
-            <property name="margin-top">4</property>
-            <property name="margin-bottom">4</property>
-            <child>
-              <object class="GtkMenuButton" id="add-button">
-                <property name="width_request">42</property>
-                <property name="visible">True</property>
-                <property name="tooltip-text" translatable="yes">添加 BV 号</property>
-                <property name="icon-name">value-increase-symbolic</property>
-                <property name="popover">popover-add</property>
-                <style>
-                  <class name="flat"/>
-                </style>
-              </object>
-            </child>
-          </object>
-        </child>
+    <property name="content">
+      <object class="GtkWindowHandle">
+        <!--GtkWindowHandle child begin-->
         <child>
           <object class="GtkBox">
             <property name="orientation">vertical</property>
             <child>
+              <object class="AdwHeaderBar" id="header">
+              </object>
+            </child>
+            <child>
               <object class="GtkBox">
                 <property name="orientation">horizontal</property>
+                <property name="margin-top">4</property>
+                <property name="margin-bottom">4</property>
                 <child>
-                  <object class="GtkScrolledWindow">
-                    <property name="hscrollbar-policy">never</property>
-                    <property name="vscrollbar-policy">automatic</property>
-                    <property name="propagate-natural-height">true</property>
-                    <property name="propagate-natural-width">true</property>
-                    <property name="max-content-width">400</property>
-                    <property name="vexpand">true</property>
-                    <property name="child">
-                      <object class="GtkTreeView" id="collectionlist">
-                        <property name="hover-selection">True</property>
-                        <property name="headers_visible">False</property>
-                        <property name="valign">start</property>
-                        <property name="margin-top">8</property>
-                        <property name="margin-bottom">8</property>
-                        <property name="margin-start">6</property>
-                        <property name="activate_on_single_click">True</property>
-                        <property name="hexpand">false</property>
-                        <style>
-                          <class name="navigation-sidebar"/>
-                        </style>
-                      </object>
-                    </property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkScrolledWindow" id="playlist_window">
-                    <property name="margin-start">6</property>
-                    <property name="vexpand">True</property>
-                    <property name="hexpand">True</property>
-                    <property name="hscrollbar-policy">never</property>
-                    <property name="vscrollbar-policy">automatic</property>
-                    <property name="propagate-natural-height">true</property>
-                    <property name="propagate-natural-width">true</property>
-                    <property name="child">
-                      <object class="GtkTreeView" id="playlist">
-                        <property name="headers_visible">False</property>
-                        <property name="valign">start</property>
-                        <property name="margin-top">8</property>
-                        <property name="margin-bottom">8</property>
-                        <property name="fixed-height-mode">True</property>
-                        <property name="hover-selection">True</property>
-                      </object>
-                    </property>
+                  <object class="GtkMenuButton" id="add_bv_btn">
+                    <property name="width_request">42</property>
+                    <property name="visible">True</property>
+                    <property name="tooltip-text" translatable="yes">添加 BV 号</property>
+                    <property name="icon-name">value-increase-symbolic</property>
+                    <property name="popover">popover-add</property>
+                    <style>
+                      <class name="flat"/>
+                    </style>
                   </object>
                 </child>
               </object>
             </child>
             <child>
-              <object class="GtkBox" id="player_control">
-                <property name="orientation">horizontal</property>
-                <property name="margin-top">4</property>
-                <property name="margin-bottom">4</property>
-                <child>
-                  <object class="GtkButton" id="backward_button">
-                    <property name="width_request">42</property>
-                    <property name="tooltip-text" translatable="yes">上一曲</property>
-                    <property name="icon-name">media-skip-backward-symbolic</property>
-                    <style>
-                      <class name="flat"/>
-                    </style>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkButton" id="pause_button">
-                    <property name="width_request">60</property>
-                    <property name="tooltip_text" translatable="yes">暂停</property>
-                    <property name="icon-name">media-playback-start-symbolic</property>
-                    <style>
-                      <class name="flat"/>
-                    </style>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkButton" id="forward_button">
-                    <property name="width_request">42</property>
-                    <property name="tooltip-text" translatable="yes">下一曲</property>
-                    <property name="icon-name">media-skip-forward-symbolic</property>
-                    <style>
-                      <class name="flat"/>
-                    </style>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkScale" id="seek">
-                    <property name="hexpand">True</property>
-                    <property name="adjustment">seek-adjustment</property>
-                  </object>
-                </child>
+              <object class="PlayListView" id="playlist_view">
               </object>
             </child>
+            <child>
+              <object class="BiliBiliPlaybackControl" id="playback_ctl">
+                  <property name="valign">end</property>
+                  <property name="margin-top">6</property>
+                  <property name="margin-bottom">12</property>
+              </object>
+            </child>
+                <!--child>
+                  <object class="GtkBox">
+                    <property name="orientation">horizontal</property>
+                    <child>
+                      <object class="GtkScrolledWindow">
+                        <property name="hscrollbar-policy">never</property>
+                        <property name="vscrollbar-policy">automatic</property>
+                        <property name="propagate-natural-height">true</property>
+                        <property name="propagate-natural-width">true</property>
+                        <property name="max-content-width">400</property>
+                        <property name="vexpand">true</property>
+                        <property name="child">
+                          <object class="GtkTreeView" id="collectionlist">
+                            <property name="hover-selection">True</property>
+                            <property name="headers_visible">False</property>
+                            <property name="valign">start</property>
+                            <property name="margin-top">8</property>
+                            <property name="margin-bottom">8</property>
+                            <property name="margin-start">6</property>
+                            <property name="activate_on_single_click">True</property>
+                            <property name="hexpand">false</property>
+                            <style>
+                              <class name="navigation-sidebar"/>
+                            </style>
+                          </object>
+                        </property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="PlayList" id="playlist">
+                      </object>
+                    </child>
+                  </object>
+                </child>-->
+                <!-- Playback controls -->
           </object>
         </child>
+        <!--GtkWindowHandle child end-->
       </object>
+    </property>
 
-    </child>
-  </object>
-
+  </template>
 </interface>

@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 gtk = { version = "0.4", package = "gtk4", features = ["v4_6"]}
-glib = "0.14.8"
 gstreamer = "0.17.4"
 gstreamer-player = "0.18.0"
 async-std = "1.10.0"
@@ -24,3 +23,6 @@ pretty_env_logger = "0.4"
 [dependencies.adw]
 package = "libadwaita"
 version  = "0.1.1"
+
+[build-dependencies]
+gtk = { version = "0.4", package = "gtk4" }
