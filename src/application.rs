@@ -8,7 +8,7 @@ mod imp {
     use gstreamer_player::prelude::Cast;
     use gtk::traits::GtkApplicationExt;
 
-    use crate::window::Window;
+    use crate::window::{self, Window};
 
     use super::*;
 
@@ -41,6 +41,7 @@ mod imp {
                 window.upcast()
             };
             window.present();
+            window.downcast::<Window>().unwrap().setup_playlist();
         }
     }
 

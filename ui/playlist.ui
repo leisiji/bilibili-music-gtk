@@ -5,25 +5,22 @@
   <template class="PlayListView" parent="GtkWidget">
     <child>
 
-    <object class="GtkScrolledWindow" id="playlist_window">
-      <property name="margin-start">6</property>
-      <property name="vexpand">True</property>
-      <property name="hexpand">True</property>
-      <property name="hscrollbar-policy">never</property>
-      <property name="vscrollbar-policy">automatic</property>
-      <property name="propagate-natural-height">true</property>
-      <property name="propagate-natural-width">true</property>
-      <property name="child">
-        <object class="GtkTreeView" id="queue_view">
-          <property name="headers_visible">False</property>
-          <property name="valign">start</property>
-          <property name="margin-top">8</property>
-          <property name="margin-bottom">8</property>
-          <property name="fixed-height-mode">True</property>
-          <property name="hover-selection">True</property>
-        </object>
-      </property>
-    </object>
+      <object class="GtkScrolledWindow" id="playlist_window">
+        <property name="hscrollbar-policy">never</property>
+        <property name="vscrollbar-policy">automatic</property>
+        <property name="propagate-natural-height">true</property>
+        <property name="propagate-natural-width">true</property>
+        <property name="max-content-width">400</property>
+        <property name="child">
+          <object class="GtkListView" id="queue_view">
+            <property name="single-click-activate">true</property>
+            <property name="hexpand">false</property>
+            <style>
+              <class name="navigation-sidebar"/>
+            </style>
+          </object>
+        </property>
+      </object>
 
     </child>
   </template>

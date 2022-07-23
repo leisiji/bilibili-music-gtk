@@ -1,14 +1,14 @@
-use gtk::{gio, glib, prelude::*, subclass::prelude::*, CompositeTemplate};
+use gtk::{gio, glib, prelude::*, subclass::prelude::*, CompositeTemplate, ListView};
 
 mod imp {
-    use gtk::TreeView;
     use super::*;
+    use gtk::ListView;
 
     #[derive(Default, CompositeTemplate)]
     #[template(resource = "/org/bilibili/music/playlist.ui")]
     pub struct PlayListView {
         #[template_child]
-        pub queue_view: TemplateChild<TreeView>
+        pub queue_view: TemplateChild<ListView>,
     }
 
     #[glib::object_subclass]
@@ -19,6 +19,8 @@ mod imp {
 
         fn class_init(klass: &mut Self::Class) {
             Self::bind_template(klass);
+            klass.set_layout_manager_type::<gtk::BinLayout>();
+            klass.set_css_name("playlistview");
         }
 
         fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
@@ -26,12 +28,18 @@ mod imp {
         }
     }
 
-    impl ObjectImpl for PlayListView { }
-    impl WidgetImpl for PlayListView { }
+    impl ObjectImpl for PlayListView {}
+    impl WidgetImpl for PlayListView {}
 }
 
 glib::wrapper! {
     pub struct PlayListView(ObjectSubclass<imp::PlayListView>)
         @extends gtk::Widget,
         @implements gio::ActionGroup, gio::ActionMap;
+}
+
+impl PlayListView {
+    pub fn queue_view(&self) -> ListView {
+        self.imp().queue_view.get()
+    }
 }

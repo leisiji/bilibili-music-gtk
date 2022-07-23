@@ -1,9 +1,9 @@
 mod application;
+mod audio;
 mod config;
 mod playback_control;
-mod window;
 mod playlist;
-mod audio;
+mod window;
 
 use application::Application;
 use gtk::{gio, prelude::*};
