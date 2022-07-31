@@ -8,7 +8,7 @@ mod imp {
     use gstreamer_player::prelude::Cast;
     use gtk::traits::GtkApplicationExt;
 
-    use crate::window::{self, Window};
+    use crate::window::Window;
 
     use super::*;
 
@@ -41,7 +41,16 @@ mod imp {
                 window.upcast()
             };
             window.present();
-            window.downcast::<Window>().unwrap().setup_playlist();
+        }
+
+        fn open(&self, application: &Self::Type, _files: &[gio::File], _hint: &str) {
+            let window = if let Some(window) = application.active_window() {
+                window
+            } else {
+                let window = Window::new(application);
+                window.upcast()
+            };
+            window.present();
         }
     }
 

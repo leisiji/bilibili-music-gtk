@@ -28,18 +28,25 @@
   </object>
 
   <!--BiliBiliMusicWin-->
-  <template class="BiliBiliMusicWin" parent="AdwApplicationWindow">
+  <template class="BiliBiliMusicWindow" parent="AdwApplicationWindow">
     <property name="visible">True</property>
+    <property name="default-width">600</property>
+    <property name="resizable">true</property>
     <property name="show-menubar">False</property>
-    <property name="width_request">1500</property>
-    <property name="height_request">800</property>
 
     <property name="content">
       <object class="GtkWindowHandle">
+        <property name="hexpand">true</property>
         <!--GtkWindowHandle child begin-->
         <child>
           <object class="GtkBox">
             <property name="orientation">vertical</property>
+
+            <child>
+              <object class="AdwHeaderBar" id="header">
+              </object>
+            </child>
+
             <child>
               <object class="GtkBox">
                 <property name="orientation">horizontal</property>

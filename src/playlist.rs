@@ -28,7 +28,15 @@ mod imp {
         }
     }
 
-    impl ObjectImpl for PlayListView {}
+    impl ObjectImpl for PlayListView {
+        /*
+        fn dispose(&self, obj: &Self::Type) {
+            while let Some(child) = obj.first_child() {
+                child.unparent();
+            }
+        }
+        */
+    }
     impl WidgetImpl for PlayListView {}
 }
 
@@ -38,7 +46,17 @@ glib::wrapper! {
         @implements gio::ActionGroup, gio::ActionMap;
 }
 
+impl Default for PlayListView {
+    fn default() -> Self {
+        glib::Object::new(&[]).expect("Failed to create PlayListView")
+    }
+}
+
 impl PlayListView {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn queue_view(&self) -> ListView {
         self.imp().queue_view.get()
     }

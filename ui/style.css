@@ -1,0 +1,59 @@
+queuerow .currently-playing {
+  padding-left: 6px;
+  font-weight: 700;
+}
+
+queuerow box.song-details {
+  padding: 6px 0;
+  border-spacing: 12px;
+}
+
+queuerow label.song-title {
+  font-weight: 700;
+  font-size: 85%;
+}
+
+queuerow label.song-artist {
+  font-size: 85%;
+}
+
+queuerow picture.cover {
+  min-width: 48px;
+  min-height: 48px;
+  box-shadow: initial;
+  border-radius: 2px;
+  margin: 0px;
+}
+
+queuerow checkbutton.selection-mode {
+  padding-right: 12px;
+  padding-left: 8px;
+}
+
+scrolledwindow undershoot.top {
+  box-shadow: inset 0 1px @borders;
+}
+
+.main-window {
+  background: linear-gradient(127deg, alpha(@background_color_0, .8), alpha(@background_color_0, 0) 70.71%),
+              linear-gradient(217deg, alpha(@background_color_1, .8), alpha(@background_color_1, 0) 70.71%),
+              linear-gradient(336deg, alpha(@background_color_2, .8), alpha(@background_color_2, 0) 70.71%);
+  color: @foreground_color;
+  transition-property: background, color;
+  transition-duration: 250ms;
+  transition-timing-function: ease;
+}
+
+:not(.main-window) .playlist-background {
+  background: @window_bg_color;
+  color: @window_fg_color;
+}
+
+:not(.main-window) .unfolded .darken {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.main-window button:focus,
+.main-window row:focus {
+  outline-color: alpha(currentColor, .25);
+}

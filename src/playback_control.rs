@@ -38,11 +38,13 @@ mod imp {
     }
 
     impl ObjectImpl for PlaybackControl {
+        /*
         fn dispose(&self, obj: &Self::Type) {
             while let Some(child) = obj.first_child() {
                 child.unparent();
             }
         }
+        */
     }
 
     impl WidgetImpl for PlaybackControl {}
