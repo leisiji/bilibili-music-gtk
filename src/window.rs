@@ -1,6 +1,6 @@
 use adw::subclass::prelude::*;
 use glib::clone;
-use gtk::{gio, glib, prelude::*, subclass::prelude::*, CompositeTemplate, SingleSelection, gdk};
+use gtk::{gdk, gio, glib, prelude::*, subclass::prelude::*, CompositeTemplate, SingleSelection};
 
 use crate::{audio::Song, queue_row::QueueRow};
 
@@ -98,7 +98,6 @@ impl Window {
                 .bind_property("playlist-selection", &row, "selection-mode")
                 .flags(glib::BindingFlags::DEFAULT)
                 .build();
-            */
 
             list_item
                 .bind_property("item", &row, "song")
@@ -121,20 +120,19 @@ impl Window {
                 .property_expression("item")
                 .chain_property::<Song>("selected")
                 .bind(&row, "selected", gtk::Widget::NONE);
+            */
         }));
-        imp.playlist_view
-            .queue_view()
-            .set_factory(Some(&factory.upcast::<gtk::ListItemFactory>()));
 
-        let selection = SingleSelection::new(Some(imp.player.queue().model()));
-        selection.set_can_unselect(false);
-        selection.set_selected(gtk::INVALID_LIST_POSITION);
-        imp.playlist_view
-            .queue_view()
-            .set_model(Some(&selection.upcast::<gtk::SelectionModel>()));
+        let selection_model = SingleSelection::new(Some(imp.player.queue().model()));
+        selection_model.set_can_unselect(false);
+        selection_model.set_selected(gtk::INVALID_LIST_POSITION);
 
-        // let song = Song::new("dasdsdsada");
-        // imp.player.queue().add_song(&song);
+        let queue_view = imp.playlist_view.queue_view();
+        queue_view.set_model(Some(&selection_model));
+        queue_view.set_factory(Some(&factory));
+
+        let song = Song::new("dasdsdsada");
+        imp.player.queue().add_song(&song);
     }
 
     fn setup_provider(&self) {

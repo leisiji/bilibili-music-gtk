@@ -142,9 +142,9 @@ impl ShuffleListModel {
                     if let Some(ref shuffle) = *this.imp().shuffle.borrow() {
                         if let Some(shuffled_pos) = shuffle.get(position as usize) {
                             this.items_changed(*shuffled_pos, removed, added);
-                        } else {
-                            this.items_changed(position, removed, added);
                         }
+                    } else {
+                        this.items_changed(position, removed, added);
                     }
                 }),
             );

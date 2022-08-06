@@ -1,5 +1,4 @@
 use adw::subclass::prelude::*;
-use glib::clone;
 use gtk::{gio, glib, prelude::*, subclass::prelude::*, CompositeTemplate};
 
 mod imp {
@@ -86,8 +85,8 @@ mod imp {
         fn property(&self, _obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
             match pspec.name() {
                 "song" => self.song.borrow().to_value(),
-                "song-artist" => self.song_artist_label.label().to_value(),
                 "song-title" => self.song_title_label.label().to_value(),
+                "song-artist" => self.song_artist_label.label().to_value(),
                 "playing" => self.playing.get().to_value(),
                 "selection-mode" => self.selection_mode.get().to_value(),
                 "selected" => self.selected_button.is_active().to_value(),
@@ -107,17 +106,17 @@ mod imp {
                     let song = value.get::<Option<Song>>().unwrap();
                     self.song.replace(song);
                 }
-                "song-artist" => {
-                    let p = value
-                        .get::<&str>()
-                        .expect("song-artist needs to be a string");
-                    obj.set_song_artist(p);
-                }
                 "song-title" => {
                     let p = value
                         .get::<&str>()
                         .expect("song-title needs to be a string");
                     obj.set_song_title(p);
+                }
+                "song-artist" => {
+                    let p = value
+                        .get::<&str>()
+                        .expect("song-artist needs to be a string");
+                    obj.set_song_artist(p);
                 }
                 "playing" => {
                     let p = value.get::<bool>().expect("playing needs to be a boolean");
@@ -154,27 +153,18 @@ impl Default for QueueRow {
 }
 
 impl QueueRow {
-    fn init_widgets(&self) {
-        self.imp().selected_button.connect_active_notify(
-            clone!(@strong self as this => move |button| {
-                if let Some(ref song) = *this.imp().song.borrow() {
-                    song.set_selected(button.is_active());
-                }
-                this.notify("selected");
-            }),
-        );
+    fn init_widgets(&self) {}
+
+    fn set_song_title(&self, title: &str) {
+        let imp = self.imp();
+        imp.song_title_label.set_label(title);
+        imp.selection_title_label.set_label(title);
     }
 
     fn set_song_artist(&self, artist: &str) {
         let imp = self.imp();
         imp.song_artist_label.set_label(artist);
         imp.selection_artist_label.set_label(artist);
-    }
-
-    fn set_song_title(&self, title: &str) {
-        let imp = self.imp();
-        imp.song_title_label.set_label(title);
-        imp.selection_title_label.set_label(title);
     }
 
     fn set_playing(&self, playing: bool) {
