@@ -1,4 +1,7 @@
-use std::rc::Rc;
+use std::{
+    rc::Rc,
+    sync::{Arc, Mutex},
+};
 
 use gtk::glib;
 
@@ -24,10 +27,7 @@ pub struct AudioPlayer {
 
 impl AudioPlayer {
     pub fn new() -> Rc<Self> {
-        let queue = Queue::default();
-        let res = Rc::new(Self { queue });
-
-        res
+        Rc::new(Self { queue: Queue::default() })
     }
 
     pub fn queue(&self) -> &Queue {

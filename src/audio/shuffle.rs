@@ -137,6 +137,7 @@ impl ShuffleListModel {
     pub fn set_model(&self, model: Option<&gio::ListModel>) {
         if let Some(model) = model {
             self.imp().model.replace(Some(model.clone()));
+            /* 实现了 ListModel 必须调用该方法去通知 model items_changed */
             model.connect_items_changed(
                 clone!(@strong self as this => move |_, position, removed, added| {
                     if let Some(ref shuffle) = *this.imp().shuffle.borrow() {

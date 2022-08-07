@@ -1,6 +1,14 @@
+use std::sync::{Arc, Mutex};
+
 use adw::subclass::prelude::*;
 use glib::clone;
-use gtk::{gdk, gio, glib, prelude::*, subclass::prelude::*, CompositeTemplate, SingleSelection};
+use gtk::{
+    gdk, gio,
+    glib::{self, MainContext},
+    prelude::*,
+    subclass::prelude::*,
+    CompositeTemplate, SingleSelection,
+};
 
 use crate::{audio::Song, queue_row::QueueRow};
 
@@ -25,6 +33,7 @@ mod imp {
 
         pub player: Rc<AudioPlayer>,
         pub provider: gtk::CssProvider,
+        pub context: MainContext,
     }
 
     #[glib::object_subclass]
@@ -48,6 +57,7 @@ mod imp {
                 playback_ctl: TemplateChild::default(),
                 player: AudioPlayer::new(),
                 provider: gtk::CssProvider::new(),
+                context: MainContext::default(),
             }
         }
     }
@@ -78,6 +88,12 @@ impl Window {
         glib::Object::new(&[("application", application)]).expect("Failed to create Window")
     }
 
+    fn init_playlist(&self) {
+        self.imp().context.spawn(async move {
+            let song = Song::new("BV1qf4y1d7d1");
+        });
+    }
+
     fn setup_playlist(&self) {
         let imp = self.imp();
 
@@ -93,12 +109,13 @@ impl Window {
                     win.update_selected_count();
                 }),
             );
-
             win
                 .bind_property("playlist-selection", &row, "selection-mode")
                 .flags(glib::BindingFlags::DEFAULT)
                 .build();
+            */
 
+            /* 将 list_item 的 item 属性绑定 song 属性 */
             list_item
                 .bind_property("item", &row, "song")
                 .flags(glib::BindingFlags::DEFAULT)
@@ -120,19 +137,19 @@ impl Window {
                 .property_expression("item")
                 .chain_property::<Song>("selected")
                 .bind(&row, "selected", gtk::Widget::NONE);
-            */
         }));
 
-        let selection_model = SingleSelection::new(Some(imp.player.queue().model()));
+        let queue_view = imp.playlist_view.queue_view();
+        let queue = imp.player.queue();
+        let selection_model = SingleSelection::new(Some(queue.model()));
+
         selection_model.set_can_unselect(false);
         selection_model.set_selected(gtk::INVALID_LIST_POSITION);
 
-        let queue_view = imp.playlist_view.queue_view();
         queue_view.set_model(Some(&selection_model));
         queue_view.set_factory(Some(&factory));
 
-        let song = Song::new("dasdsdsada");
-        imp.player.queue().add_song(&song);
+        self.init_playlist();
     }
 
     fn setup_provider(&self) {

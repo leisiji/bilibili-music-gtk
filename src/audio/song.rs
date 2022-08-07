@@ -1,22 +1,25 @@
+use anyhow::Result;
 use gtk::{glib, prelude::*, subclass::prelude::*};
+
+use crate::bilibili::BvidInfo;
 
 pub struct SongData {
     artist: Option<String>,
-    title: Option<String>,
-    uuid: Option<String>,
-    duration: u64,
-    url: String,
+    title: String,
+    duration: u32,
+    bvid: String,
     album: Option<String>,
+    cid: u32,
 }
 
 impl Default for SongData {
     fn default() -> Self {
         SongData {
             artist: Some("Invalid Artist".to_string()),
-            title: Some("Invalid Title".to_string()),
-            uuid: None,
+            title: "Invalid Title".to_string(),
             duration: 0,
-            url: "Invalid url".to_string(),
+            bvid: "Invalid bvid".to_string(),
+            cid: 0,
             album: Some("Invalid Album".to_string()),
         }
     }
@@ -31,20 +34,34 @@ impl SongData {
         self.artist.as_deref()
     }
 
-    pub fn title(&self) -> Option<&str> {
-        self.title.as_deref()
+    pub fn title(&self) -> &str {
+        self.title.as_str()
     }
 
-    pub fn uuid(&self) -> Option<&str> {
-        self.uuid.as_deref()
-    }
-
-    pub fn duration(&self) -> u64 {
+    pub fn duration(&self) -> u32 {
         self.duration
     }
 
-    pub fn url(&self) -> String {
-        String::clone(&self.url)
+    pub fn bvid(&self) -> String {
+        String::clone(&self.bvid)
+    }
+
+    pub fn from_bvid(bvid: &str) -> Result<SongData> {
+        const URL_BVID_INFO: &str = "http://api.bilibili.com/x/web-interface/view?bvid=";
+        let req = format!("{}{}", URL_BVID_INFO, bvid).to_string();
+        let resp = ureq::get(&req).call()?.into_string()?;
+        let bvid_info: BvidInfo = serde_json::from_str(resp.as_str())?;
+
+        let song_data = Self {
+            artist: Some(bvid_info.get_author().clone()),
+            title: bvid_info.get_titile().clone(),
+            album: None,
+            duration: bvid_info.get_page_duration(0),
+            bvid: bvid.to_string(),
+            cid: bvid_info.get_page_cid(0),
+        };
+
+        Ok(song_data)
     }
 }
 
@@ -52,7 +69,7 @@ mod imp {
     use std::cell::{Cell, RefCell};
 
     use gstreamer::glib::once_cell::sync::Lazy;
-    use gtk::glib::{ParamFlags, ParamSpec, ParamSpecString, ParamSpecUInt};
+    use gtk::glib::{ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecString, ParamSpecUInt};
 
     use super::*;
 
@@ -74,7 +91,7 @@ mod imp {
             static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
                 vec![
                     ParamSpecString::new(
-                        "url",
+                        "bvid",
                         "",
                         "",
                         None,
@@ -82,22 +99,32 @@ mod imp {
                     ),
                     ParamSpecString::new("artist", "", "", None, ParamFlags::READABLE),
                     ParamSpecUInt::new("duration", "", "", 0, u32::MAX, 0, ParamFlags::READABLE),
+                    ParamSpecString::new("title", "", "", None, ParamFlags::READABLE),
+                    ParamSpecBoolean::new("playing", "", "", false, ParamFlags::READWRITE),
+                    ParamSpecBoolean::new("selected", "", "", false, ParamFlags::READWRITE),
                 ]
             });
             PROPERTIES.as_ref()
         }
 
+        /* set_property 无需实现 properties 中的所有属性，因为某些属性是不可变的 */
         fn set_property(
             &self,
-            _obj: &Self::Type,
+            obj: &Self::Type,
             _id: usize,
             value: &glib::Value,
             pspec: &ParamSpec,
         ) {
             match pspec.name() {
-                "url" => {
-                    if let Ok(_p) = value.get::<&str>() {
-                        self.data.replace(SongData::default());
+                "bvid" => {
+                    if let Ok(bvid) = value.get::<&str>() {
+                        if let Ok(song_data) = SongData::from_bvid(bvid) {
+                            self.data.replace(song_data);
+                            obj.notify("artist");
+                            obj.notify("title");
+                            obj.notify("album");
+                            obj.notify("duration");
+                        }
                     }
                 }
                 "playing" => {
@@ -117,7 +144,7 @@ mod imp {
                 "album" => obj.album().to_value(),
                 "title" => obj.title().to_value(),
                 "duration" => obj.duration().to_value(),
-                "url" => obj.url().to_value(),
+                "bvid" => obj.bvid().to_value(),
                 "playing" => self.playing.get().to_value(),
                 "selected" => self.selected.get().to_value(),
                 _ => unimplemented!(),
@@ -137,8 +164,9 @@ impl Default for Song {
 }
 
 impl Song {
-    pub fn new(url: &str) -> Self {
-        glib::Object::new::<Self>(&[("url", &url)]).expect("Failed to create song object")
+    pub fn new(bvid: &str) -> Self {
+        glib::Object::new::<Self>(&[("bvid", &bvid)])
+            .expect("Failed to create an empty Song object")
     }
 
     pub fn empty() -> Self {
@@ -164,10 +192,7 @@ impl Song {
     }
 
     pub fn title(&self) -> String {
-        match self.imp().data.borrow().title() {
-            Some(title) => title.to_string(),
-            None => String::from("Unknown title"),
-        }
+        self.imp().data.borrow().title().to_string()
     }
 
     pub fn album(&self) -> String {
@@ -177,11 +202,31 @@ impl Song {
         }
     }
 
-    pub fn duration(&self) -> u64 {
+    pub fn duration(&self) -> u32 {
         self.imp().data.borrow().duration
     }
 
-    pub fn url(&self) -> String {
-        self.imp().data.borrow().url()
+    pub fn bvid(&self) -> String {
+        self.imp().data.borrow().bvid()
+    }
+
+    pub fn cid(&self) -> u32 {
+        self.imp().data.borrow().cid
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Song;
+
+    #[test]
+    fn test_song() {
+        let song = Song::new("BV1qf4y1d7d1");
+        println!(
+            "title: {}, artist: {}, cid: {}",
+            song.title(),
+            song.artist(),
+            song.cid()
+        );
     }
 }
