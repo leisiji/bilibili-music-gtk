@@ -1,5 +1,3 @@
-use std::sync::{Arc, Mutex};
-
 use adw::subclass::prelude::*;
 use glib::clone;
 use gtk::{
@@ -10,14 +8,13 @@ use gtk::{
     CompositeTemplate, SingleSelection,
 };
 
-use crate::{audio::Song, queue_row::QueueRow};
+use crate::audio::{PlayerAction, Song};
+use crate::{audio::SongData, queue_row::QueueRow};
 
 mod imp {
-    use std::rc::Rc;
-
-    use gtk::MenuButton;
-
     use crate::{audio::AudioPlayer, playback_control::PlaybackControl, playlist::PlayListView};
+    use gtk::MenuButton;
+    use std::rc::Rc;
 
     use super::*;
 
@@ -89,8 +86,12 @@ impl Window {
     }
 
     fn init_playlist(&self) {
+        let tx = self.imp().player.tx.clone();
         self.imp().context.spawn(async move {
-            let song = Song::new("BV1qf4y1d7d1");
+            let data = SongData::from_bvid("BV1qf4y1d7d1");
+            if let Ok(data) = data {
+                tx.send(PlayerAction::AddSong(data)).unwrap();
+            }
         });
     }
 
@@ -138,16 +139,14 @@ impl Window {
                 .chain_property::<Song>("selected")
                 .bind(&row, "selected", gtk::Widget::NONE);
         }));
-
         let queue_view = imp.playlist_view.queue_view();
+        queue_view.set_factory(Some(&factory));
+
         let queue = imp.player.queue();
         let selection_model = SingleSelection::new(Some(queue.model()));
-
         selection_model.set_can_unselect(false);
         selection_model.set_selected(gtk::INVALID_LIST_POSITION);
-
         queue_view.set_model(Some(&selection_model));
-        queue_view.set_factory(Some(&factory));
 
         self.init_playlist();
     }

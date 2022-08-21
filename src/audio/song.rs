@@ -164,9 +164,14 @@ impl Default for Song {
 }
 
 impl Song {
-    pub fn new(bvid: &str) -> Self {
-        glib::Object::new::<Self>(&[("bvid", &bvid)])
-            .expect("Failed to create an empty Song object")
+    pub fn new(data: SongData) -> Self {
+        let obj = glib::Object::new::<Self>(&[]).expect("Failed to create an empty Song object");
+        obj.imp().data.replace(data);
+        obj.notify("artist");
+        obj.notify("title");
+        obj.notify("album");
+        obj.notify("duration");
+        return obj;
     }
 
     pub fn empty() -> Self {
@@ -217,11 +222,14 @@ impl Song {
 
 #[cfg(test)]
 mod test {
+    use crate::audio::SongData;
+
     use super::Song;
 
     #[test]
     fn test_song() {
-        let song = Song::new("BV1qf4y1d7d1");
+        let data = SongData::from_bvid("BV1qf4y1d7d1").unwrap();
+        let song = Song::new(data);
         println!(
             "title: {}, artist: {}, cid: {}",
             song.title(),
