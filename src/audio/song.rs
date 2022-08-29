@@ -1,15 +1,17 @@
 use anyhow::Result;
 use gtk::{glib, prelude::*, subclass::prelude::*};
+use serde::{Deserialize, Serialize};
 
-use crate::bilibili::BvidInfo;
+use crate::bilibili::data::BvidInfo;
 
+#[derive(Deserialize, Serialize, Clone)]
 pub struct SongData {
     artist: Option<String>,
     title: String,
     duration: u32,
     bvid: String,
-    album: Option<String>,
     cid: u32,
+    album: Option<String>,
 }
 
 impl Default for SongData {
@@ -47,11 +49,7 @@ impl SongData {
     }
 
     pub fn from_bvid(bvid: &str) -> Result<SongData> {
-        const URL_BVID_INFO: &str = "http://api.bilibili.com/x/web-interface/view?bvid=";
-        let req = format!("{}{}", URL_BVID_INFO, bvid).to_string();
-        let resp = ureq::get(&req).call()?.into_string()?;
-        let bvid_info: BvidInfo = serde_json::from_str(resp.as_str())?;
-
+        let bvid_info: BvidInfo = BvidInfo::from_bvid(bvid)?;
         let song_data = Self {
             artist: Some(bvid_info.get_author().clone()),
             title: bvid_info.get_titile().clone(),

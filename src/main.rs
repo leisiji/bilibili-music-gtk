@@ -3,7 +3,7 @@ mod audio;
 mod bilibili;
 mod config;
 mod playback_control;
-mod playlist;
+mod playlist_view;
 mod queue_row;
 mod window;
 

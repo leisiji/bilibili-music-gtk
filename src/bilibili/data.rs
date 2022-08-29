@@ -1,4 +1,12 @@
-use serde::Deserialize;
+use anyhow::{Ok, Result};
+use std::{
+    fs::File,
+    io::{BufReader, BufWriter, Write},
+};
+
+use serde::{Deserialize, Serialize};
+
+use crate::{audio::SongData, config::CONFIG_FILE};
 
 /// response from bvid:
 /// {
@@ -110,6 +118,28 @@ impl BvidInfo {
     pub fn get_author(&self) -> &String {
         &self.data.owner.name
     }
+}
+
+#[derive(Deserialize, Serialize)]
+struct PlayListData {
+    pub data: Vec<SongData>,
+}
+
+pub fn parse_config() -> Result<Vec<SongData>> {
+    let file = File::open(&*CONFIG_FILE)?;
+    let buf_reader = BufReader::new(file);
+    let config: PlayListData = serde_json::from_reader(buf_reader)?;
+    Ok(config.data)
+}
+
+pub fn write_config(data: Vec<SongData>) -> Result<()> {
+    let file = File::create(&*CONFIG_FILE)?;
+    let mut buf_writer = BufWriter::new(file);
+    let list = PlayListData { data };
+    let s = serde_json::to_vec(&list)?;
+    buf_writer.write(&s)?;
+    buf_writer.flush()?;
+    Ok(())
 }
 
 /*

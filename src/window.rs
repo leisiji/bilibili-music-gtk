@@ -8,11 +8,16 @@ use gtk::{
     CompositeTemplate, SingleSelection,
 };
 
-use crate::audio::{PlayerAction, Song};
-use crate::{audio::SongData, queue_row::QueueRow};
+use crate::queue_row::QueueRow;
+use crate::{
+    audio::{PlayerAction, Song},
+    bilibili::data::parse_config,
+};
 
 mod imp {
-    use crate::{audio::AudioPlayer, playback_control::PlaybackControl, playlist::PlayListView};
+    use crate::{
+        audio::AudioPlayer, playback_control::PlaybackControl, playlist_view::PlayListView,
+    };
     use gtk::MenuButton;
     use std::rc::Rc;
 
@@ -88,9 +93,10 @@ impl Window {
     fn init_playlist(&self) {
         let tx = self.imp().player.tx.clone();
         self.imp().context.spawn(async move {
-            let data = SongData::from_bvid("BV1qf4y1d7d1");
-            if let Ok(data) = data {
-                tx.send(PlayerAction::AddSong(data)).unwrap();
+            if let Ok(data) = parse_config() {
+                for i in data {
+                    tx.send(PlayerAction::AddSong(i)).unwrap();
+                }
             }
         });
     }

@@ -1,3 +1,2 @@
-mod data;
-
-pub use data::BvidInfo;
+mod api;
+pub mod data;

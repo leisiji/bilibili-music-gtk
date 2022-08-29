@@ -1,6 +1,8 @@
 use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
-use super::song::Song;
+use crate::bilibili::data::write_config;
+
+use super::{song::Song, SongData};
 
 mod imp {
     use std::cell::Cell;
@@ -92,6 +94,14 @@ impl Queue {
         None
     }
 
+    pub fn n_songs(&self) -> u32 {
+        self.imp().model.n_items()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.imp().model.n_items() == 0
+    }
+
     pub fn current_song(&self) -> Option<Song> {
         if let Some(pos) = self.imp().current_pos.get() {
             return self.song_at(pos);
@@ -104,8 +114,17 @@ impl Queue {
     }
 
     pub fn add_song(&self, song: &Song) {
+        let n = self.model().n_items();
+        for i in 1..n {
+            let iter = self.model().item(i).unwrap().downcast::<Song>().unwrap();
+            if song.imp().data.borrow().bvid() == iter.imp().data.borrow().bvid() {
+                return;
+            }
+        }
+
         self.imp().store.append(song);
         self.notify("n-songs");
+        self.sync_config();
     }
 
     pub fn add_songs(&self, songs: &[impl IsA<glib::Object>]) {
@@ -119,5 +138,21 @@ impl Queue {
         if is_shuffled {
             self.imp().model.reshuffle();
         }
+        self.sync_config();
+    }
+
+    fn to_vec(&self) -> Vec<SongData> {
+        let mut v: Vec<SongData> = Vec::new();
+        let n = self.model().n_items();
+        for i in 0..n {
+            let song = self.model().item(i).unwrap().downcast_ref::<Song>().unwrap();
+            v.push(song.imp().data.borrow().clone());
+        }
+        v
+    }
+
+    fn sync_config(&self) {
+        let data: Vec<SongData> = self.to_vec();
+        write_config(data).unwrap();
     }
 }
