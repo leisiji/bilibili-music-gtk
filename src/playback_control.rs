@@ -61,3 +61,9 @@ impl Default for PlaybackControl {
         glib::Object::new(&[]).expect("Failed to create PlaybackControl")
     }
 }
+
+impl PlaybackControl {
+    pub fn pause_btn(&self) -> gtk::Button {
+        self.imp().pause_btn.get()
+    }
+}

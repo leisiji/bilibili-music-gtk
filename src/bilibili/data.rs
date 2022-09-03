@@ -85,7 +85,7 @@ struct Owner {
 struct BiliBiliPageInfo {
     cid: u32,
     // part: String,
-    duration: u32,
+    duration: u64,
 }
 
 impl BvidInfo {
@@ -103,7 +103,7 @@ impl BvidInfo {
         }
     }
 
-    pub fn get_page_duration(&self, index: usize) -> u32 {
+    pub fn get_page_duration(&self, index: usize) -> u64 {
         if let Some(page) = self.data.pages.get(index) {
             page.duration
         } else {
@@ -142,19 +142,22 @@ pub fn write_config(data: Vec<SongData>) -> Result<()> {
     Ok(())
 }
 
-/*
 #[derive(Deserialize)]
 pub struct BiliBiliSong {
-    baseUrl: String,
+    pub(super) baseUrl: String,
 }
 
 #[derive(Deserialize)]
-struct Dash {
-    audio: Vec<BiliBiliSong>,
+pub(crate) struct Dash {
+    pub(crate) audio: Vec<BiliBiliSong>,
 }
 
 #[derive(Deserialize)]
-struct PlayerData {
-    dash: Dash,
+pub(crate) struct PlayUrlData {
+    pub(crate) dash: Dash,
 }
-*/
+
+#[derive(Deserialize)]
+pub(crate) struct PlayUrl {
+    pub(crate) data: PlayUrlData,
+}

@@ -19,7 +19,7 @@ mod imp {
         audio::AudioPlayer, playback_control::PlaybackControl, playlist_view::PlayListView,
     };
     use gtk::MenuButton;
-    use std::rc::Rc;
+    use std::{cell::Cell, rc::Rc};
 
     use super::*;
 
@@ -36,6 +36,7 @@ mod imp {
         pub player: Rc<AudioPlayer>,
         pub provider: gtk::CssProvider,
         pub context: MainContext,
+        pub playlist_selection: Cell<bool>,
     }
 
     #[glib::object_subclass]
@@ -60,6 +61,7 @@ mod imp {
                 player: AudioPlayer::new(),
                 provider: gtk::CssProvider::new(),
                 context: MainContext::default(),
+                playlist_selection: Cell::new(false),
             }
         }
     }
@@ -90,6 +92,66 @@ impl Window {
         glib::Object::new(&[("application", application)]).expect("Failed to create Window")
     }
 
+    /*
+    // Bind the PlayerState to the UI
+    fn bind_state(&self) {
+        let imp = self.imp();
+        let state = imp.player.state();
+
+        // Use the PlayerState:playing property to control the play/pause button
+        state.connect_notify_local(
+            Some("playing"),
+            clone!(@weak self as win => move |state, _| {
+                win.set_playlist_selection(false);
+                let pause_btn = win.imp().playback_ctl.pause_btn();
+                if state.playing() {
+                    pause_btn.set_icon_name("media-playback-pause-symbolic");
+                } else {
+                    pause_btn.set_icon_name("media-playback-start-symbolic");
+                }
+            }),
+        );
+        // Update the position label
+        state.connect_notify_local(
+            Some("position"),
+            clone!(@weak self as win => move |state, _| {
+                if state.current_song().is_some() {
+                    let elapsed = state.position();
+                    let remaining = state.duration().checked_sub(state.position()).unwrap_or_default();
+                    win.imp().playback_control.set_elapsed(Some(elapsed));
+                    win.imp().playback_control.set_remaining(Some(remaining));
+                    let pos = state.position() as f64 / state.duration() as f64;
+                    win.imp().playback_control.waveform_view().set_position(pos);
+                } else {
+                    win.imp().playback_control.set_elapsed(None);
+                    win.imp().playback_control.set_remaining(None);
+                }
+            }),
+        );
+        // Bind the song properties to the UI
+        state
+            .bind_property("title", &imp.song_details.get().title_label(), "label")
+            .flags(glib::BindingFlags::DEFAULT)
+            .build();
+        state
+            .bind_property("artist", &imp.song_details.get().artist_label(), "label")
+            .flags(glib::BindingFlags::DEFAULT)
+            .build();
+        state
+            .bind_property("album", &imp.song_details.get().album_label(), "label")
+            .flags(glib::BindingFlags::DEFAULT)
+            .build();
+        state
+            .bind_property(
+                "volume",
+                &imp.playback_control.get().volume_control(),
+                "volume",
+            )
+            .flags(glib::BindingFlags::DEFAULT)
+            .build();
+    }
+    */
+
     fn init_playlist(&self) {
         let tx = self.imp().player.tx.clone();
         self.imp().context.spawn(async move {
@@ -99,6 +161,19 @@ impl Window {
                 }
             }
         });
+
+        self.imp().playlist_view.queue_view().connect_activate(
+            clone!(@weak self as win => move |_, pos| {
+                let imp = win.imp();
+                let queue = imp.player.queue();
+                if win.playlist_selection() {
+                    queue.select_song_at(pos);
+                } else if queue.current_song_index() != Some(pos) {
+                    imp.player.skip_to(pos);
+                    imp.player.play();
+                }
+            }),
+        );
     }
 
     fn setup_playlist(&self) {
@@ -166,5 +241,9 @@ impl Window {
 
     fn restore_window_state(&self) {
         self.set_default_size(600, -1);
+    }
+
+    fn playlist_selection(&self) -> bool {
+        self.imp().playlist_selection.get()
     }
 }

@@ -2,13 +2,13 @@ use anyhow::Result;
 use gtk::{glib, prelude::*, subclass::prelude::*};
 use serde::{Deserialize, Serialize};
 
-use crate::bilibili::data::BvidInfo;
+use crate::{bilibili::{data::BvidInfo, get_url, download_url}, config::CACHE_DIR};
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct SongData {
     artist: Option<String>,
     title: String,
-    duration: u32,
+    duration: u64,
     bvid: String,
     cid: u32,
     album: Option<String>,
@@ -40,7 +40,7 @@ impl SongData {
         self.title.as_str()
     }
 
-    pub fn duration(&self) -> u32 {
+    pub fn duration(&self) -> u64 {
         self.duration
     }
 
@@ -60,6 +60,14 @@ impl SongData {
         };
 
         Ok(song_data)
+    }
+
+    pub fn download(&self) -> Result<String> {
+        let song_path = CACHE_DIR.join(self.title());
+        let url = get_url(self.bvid.as_str(), self.cid)?;
+        download_url(url.as_str(), song_path.to_str().unwrap())?;
+        let uri = format!("file://{}", song_path.display());
+        Ok(uri)
     }
 }
 
@@ -187,6 +195,13 @@ impl Song {
         }
     }
 
+    pub fn set_playing(&self, playing: bool) {
+        let was_playing = self.imp().playing.replace(playing);
+        if was_playing != playing {
+            self.notify("playing");
+        }
+    }
+
     pub fn artist(&self) -> String {
         match self.imp().data.borrow().artist() {
             Some(artist) => artist.to_string(),
@@ -205,7 +220,7 @@ impl Song {
         }
     }
 
-    pub fn duration(&self) -> u32 {
+    pub fn duration(&self) -> u64 {
         self.imp().data.borrow().duration
     }
 
@@ -215,6 +230,19 @@ impl Song {
 
     pub fn cid(&self) -> u32 {
         self.imp().data.borrow().cid
+    }
+
+    pub fn uri(&self) -> Option<String> {
+        let song_path = CACHE_DIR.join(self.title());
+        if song_path.exists() {
+            Some(format!("file://{}", song_path.display()))
+        } else {
+            None
+        }
+    }
+
+    pub fn song_data(&self) -> SongData {
+        self.imp().data.borrow().clone()
     }
 }
 

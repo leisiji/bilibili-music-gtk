@@ -2,7 +2,7 @@ use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
 use crate::bilibili::data::write_config;
 
-use super::{song::Song, SongData};
+use super::{song::Song, RepeatMode, SongData};
 
 mod imp {
     use std::cell::Cell;
@@ -10,7 +10,7 @@ mod imp {
     use gstreamer::glib::once_cell::sync::Lazy;
     use gtk::glib::{ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecObject, ParamSpecUInt};
 
-    use crate::audio::{player::RepeatMode, shuffle::ShuffleListModel, song::Song};
+    use crate::audio::{shuffle::ShuffleListModel, song::Song};
 
     use super::*;
 
@@ -87,6 +87,14 @@ impl Default for Queue {
 }
 
 impl Queue {
+    pub fn select_song_at(&self, index: u32) {
+        if let Some(song) = self.imp().model.item(index) {
+            let song = song.downcast_ref::<Song>().unwrap();
+            let is_selected = !song.selected();
+            song.set_selected(is_selected);
+        }
+    }
+
     pub fn song_at(&self, pos: u32) -> Option<Song> {
         if let Some(song) = self.imp().model.item(pos) {
             return Some(song.downcast::<Song>().unwrap());
@@ -107,6 +115,10 @@ impl Queue {
             return self.song_at(pos);
         }
         None
+    }
+
+    pub fn current_song_index(&self) -> Option<u32> {
+        self.imp().current_pos.get()
     }
 
     pub fn model(&self) -> &gio::ListModel {
@@ -141,11 +153,18 @@ impl Queue {
         self.sync_config();
     }
 
+    pub fn skip_song(&self, pos: u32) -> Option<Song> {
+        self.imp().current_pos.replace(Some(pos));
+        self.notify("current");
+        self.song_at(pos)
+    }
+
     fn to_vec(&self) -> Vec<SongData> {
         let mut v: Vec<SongData> = Vec::new();
         let n = self.model().n_items();
         for i in 0..n {
-            let song = self.model().item(i).unwrap().downcast_ref::<Song>().unwrap();
+            let obj = self.model().item(i).unwrap();
+            let song = obj.downcast_ref::<Song>().unwrap();
             v.push(song.imp().data.borrow().clone());
         }
         v
@@ -154,5 +173,40 @@ impl Queue {
     fn sync_config(&self) {
         let data: Vec<SongData> = self.to_vec();
         write_config(data).unwrap();
+    }
+
+    pub fn next_song(&self) -> Option<Song> {
+        let store = &self.imp().model;
+
+        let n_songs = store.n_items();
+        if n_songs == 0 {
+            return None;
+        }
+
+        let repeat_mode = self.imp().repeat_mode.get();
+        if let Some(current) = self.current_song_index() {
+            let next: Option<u32> = match repeat_mode {
+                RepeatMode::Consecutive if current < n_songs => Some(current + 1),
+                RepeatMode::RepeatOne => Some(current),
+                RepeatMode::RepeatAll if current < n_songs - 1 => Some(current + 1),
+                RepeatMode::RepeatAll if current == n_songs - 1 => Some(0),
+                _ => None,
+            };
+
+            if let Some(next) = next {
+                self.imp().current_pos.replace(Some(next));
+                self.notify("current");
+                self.song_at(next)
+            } else {
+                self.imp().current_pos.replace(None);
+                self.notify("current");
+                None
+            }
+        } else {
+            // Return the first song
+            self.imp().current_pos.replace(Some(0));
+            self.notify("current");
+            self.song_at(0)
+        }
     }
 }
