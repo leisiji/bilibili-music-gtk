@@ -23,6 +23,7 @@ impl Default for RepeatMode {
 pub enum PlayerAction {
     PlaySong(String),
     AddSong(SongData),
+    UpdatePosition(u64),
 }
 
 #[derive(PartialEq, Copy, Clone)]
@@ -127,8 +128,21 @@ impl AudioPlayer {
                 self.backend.set_uri(Some(uri.as_str()));
                 self.backend.play();
             }
+            PlayerAction::UpdatePosition(pos) => {
+                self.state.set_position(pos);
+            }
         }
         glib::Continue(true)
+    }
+
+    fn init_backend(&self) {
+        let tx = self.tx.clone();
+        self.backend
+            .connect_position_updated(move |_, clock| {
+                if let Some(clock) = clock {
+                    tx.send(PlayerAction::UpdatePosition(clock.seconds())).unwrap();
+                }
+            });
     }
 
     pub fn new() -> Rc<Self> {
@@ -152,6 +166,8 @@ impl AudioPlayer {
             clone!(@strong audio_player as this => move |action| this.clone().process_action(action))
         );
 
+        audio_player.init_backend();
+
         audio_player
     }
 
@@ -163,5 +179,9 @@ impl AudioPlayer {
         if !self.state.playing() {
             self.set_playback_state(PlaybackState::Playing)
         }
+    }
+
+    pub fn state(&self) -> &PlayerState {
+        &self.state
     }
 }

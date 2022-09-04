@@ -6,7 +6,7 @@
     <property name="upper">1.0</property>
   </object>
 
-  <template class="BiliBiliPlaybackControl" parent="GtkWidget">
+  <template class="PlaybackControl" parent="GtkWidget">
     <child>
 
     <object class="GtkBox" id="playback_box">
@@ -38,6 +38,18 @@
           <property name="icon-name">media-skip-forward-symbolic</property>
           <style>
             <class name="flat"/>
+          </style>
+        </object>
+      </child>
+      <child>
+        <object class="GtkLabel" id="elapsed_label">
+          <property name="ellipsize">end</property>
+          <property name="margin-start">10</property>
+          <property name="margin-end">10</property>
+          <property name="label" translatable="yes">0:00</property>
+          <style>
+            <class name="caption"/>
+            <class name="numeric"/>
           </style>
         </object>
       </child>

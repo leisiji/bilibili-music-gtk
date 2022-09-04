@@ -5,6 +5,7 @@ mod config;
 mod playback_control;
 mod playlist_view;
 mod queue_row;
+mod utils;
 mod window;
 
 use application::Application;

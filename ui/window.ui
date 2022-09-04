@@ -51,7 +51,7 @@
               </object>
             </child>
             <child>
-              <object class="BiliBiliPlaybackControl" id="playback_ctl">
+              <object class="PlaybackControl" id="playback_ctl">
                 <property name="halign">start</property>
                 <property name="margin-top">6</property>
                 <property name="margin-bottom">12</property>

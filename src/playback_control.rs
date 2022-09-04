@@ -1,5 +1,7 @@
 use gtk::{gio, glib, prelude::*, subclass::prelude::*, CompositeTemplate};
 
+use crate::utils;
+
 mod imp {
     use super::*;
     use gtk::{Box, Button, Scale};
@@ -17,17 +19,18 @@ mod imp {
         pub pause_btn: TemplateChild<Button>,
         #[template_child]
         pub seek: TemplateChild<Scale>,
+        #[template_child]
+        pub elapsed_label: TemplateChild<gtk::Label>,
     }
 
     #[glib::object_subclass]
     impl ObjectSubclass for PlaybackControl {
-        const NAME: &'static str = "BiliBiliPlaybackControl";
+        const NAME: &'static str = "PlaybackControl";
         type Type = super::PlaybackControl;
         type ParentType = gtk::Widget;
 
         fn class_init(klass: &mut Self::Class) {
             Self::bind_template(klass);
-
             klass.set_layout_manager_type::<gtk::BinLayout>();
             klass.set_css_name("playbackcontrol");
         }
@@ -65,5 +68,15 @@ impl Default for PlaybackControl {
 impl PlaybackControl {
     pub fn pause_btn(&self) -> gtk::Button {
         self.imp().pause_btn.get()
+    }
+
+    pub fn set_elapsed(&self, elapsed: Option<u64>) {
+        if let Some(elapsed) = elapsed {
+            self.imp()
+                .elapsed_label
+                .set_text(&utils::format_time(elapsed));
+        } else {
+            self.imp().elapsed_label.set_text("0:00");
+        }
     }
 }

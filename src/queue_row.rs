@@ -169,26 +169,13 @@ impl QueueRow {
 
     fn set_playing(&self, playing: bool) {
         if playing != self.imp().playing.replace(playing) {
-            self.update_mode();
             self.notify("playing");
         }
     }
 
     fn set_selection_mode(&self, selection_mode: bool) {
         if selection_mode != self.imp().selection_mode.replace(selection_mode) {
-            self.update_mode();
             self.notify("selection-mode");
-        }
-    }
-
-    fn update_mode(&self) {
-        let imp = self.imp();
-        if imp.selection_mode.get() {
-            imp.row_stack.set_visible_child_name("selection-mode");
-        } else if imp.playing.get() {
-            imp.row_stack.set_visible_child_name("currently-playing");
-        } else {
-            imp.row_stack.set_visible_child_name("song-details");
         }
     }
 }

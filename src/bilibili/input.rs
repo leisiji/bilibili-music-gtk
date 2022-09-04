@@ -51,22 +51,16 @@ impl BvidInputView {
     pub fn new() -> Self {
         Self::default()
     }
+
+    pub fn confirm_btn(&self) -> gtk::Button {
+        self.imp().confirm_btn.get()
+    }
+
+    pub fn get_input_bvid(&self) -> String {
+        let buffer = self.imp().bv_input.buffer();
+        let bvid = buffer.text();
+        buffer.delete_text(0, None);
+        self.set_visible(false);
+        bvid
+    }
 }
-
-/*
-        self.imp().confirm_btn.connect_clicked(
-            clone!(@weak self as win => move |_| {
-                let buffer = win.imp().bv_input.buffer();
-                let bvid = buffer.text();
-                let tx = win.imp().player.tx.clone();
-
-                buffer.delete_text(0, None);
-
-                win.imp().context.spawn(async move {
-                    if let Ok(data) = SongData::from_bvid(bvid.as_str()) {
-                        tx.send(PlayerAction::AddSong(data)).unwrap();
-                    }
-                });
-            })
-        );
-*/
