@@ -8,17 +8,14 @@ use gtk::{
     CompositeTemplate, SingleSelection,
 };
 
+use crate::audio::Song;
 use crate::queue_row::QueueRow;
-use crate::{
-    audio::{PlayerAction, Song},
-    bilibili::data::parse_config,
-};
 
 mod imp {
     use crate::{
-        audio::AudioPlayer, playback_control::PlaybackControl, playlist_view::PlayListView,
+        audio::AudioPlayer, bilibili::BvidInputView, playback_control::PlaybackControl,
+        playlist_view::PlayListView,
     };
-    use gtk::MenuButton;
     use std::{cell::Cell, rc::Rc};
 
     use super::*;
@@ -27,7 +24,7 @@ mod imp {
     #[template(resource = "/org/bilibili/music/window.ui")]
     pub struct Window {
         #[template_child]
-        pub add_bv_btn: TemplateChild<MenuButton>,
+        pub bvid_input_view: TemplateChild<BvidInputView>,
         #[template_child]
         pub playlist_view: TemplateChild<PlayListView>,
         #[template_child]
@@ -55,13 +52,13 @@ mod imp {
 
         fn new() -> Self {
             Self {
-                add_bv_btn: TemplateChild::default(),
                 playlist_view: TemplateChild::default(),
                 playback_ctl: TemplateChild::default(),
                 player: AudioPlayer::new(),
                 provider: gtk::CssProvider::new(),
                 context: MainContext::default(),
                 playlist_selection: Cell::new(false),
+                bvid_input_view: TemplateChild::default(),
             }
         }
     }
@@ -153,15 +150,6 @@ impl Window {
     */
 
     fn init_playlist(&self) {
-        let tx = self.imp().player.tx.clone();
-        self.imp().context.spawn(async move {
-            if let Ok(data) = parse_config() {
-                for i in data {
-                    tx.send(PlayerAction::AddSong(i)).unwrap();
-                }
-            }
-        });
-
         self.imp().playlist_view.queue_view().connect_activate(
             clone!(@weak self as win => move |_, pos| {
                 let imp = win.imp();

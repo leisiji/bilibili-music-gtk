@@ -2,7 +2,10 @@ use anyhow::Result;
 use gtk::{glib, prelude::*, subclass::prelude::*};
 use serde::{Deserialize, Serialize};
 
-use crate::{bilibili::{data::BvidInfo, get_url, download_url}, config::CACHE_DIR};
+use crate::{
+    bilibili::{data::BvidInfo, download_url, get_url},
+    config::CACHE_DIR,
+};
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct SongData {
@@ -71,6 +74,12 @@ impl SongData {
     }
 }
 
+impl PartialEq for SongData {
+    fn eq(&self, other: &Self) -> bool {
+        return (self.bvid == other.bvid) && (self.cid == other.cid);
+    }
+}
+
 mod imp {
     use std::cell::{Cell, RefCell};
 
@@ -104,6 +113,7 @@ mod imp {
                         ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
                     ),
                     ParamSpecString::new("artist", "", "", None, ParamFlags::READABLE),
+                    ParamSpecString::new("album", "", "", None, ParamFlags::READABLE),
                     ParamSpecUInt::new("duration", "", "", 0, u32::MAX, 0, ParamFlags::READABLE),
                     ParamSpecString::new("title", "", "", None, ParamFlags::READABLE),
                     ParamSpecBoolean::new("playing", "", "", false, ParamFlags::READWRITE),

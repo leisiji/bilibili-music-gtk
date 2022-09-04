@@ -10,7 +10,10 @@ mod imp {
     use gstreamer::glib::once_cell::sync::Lazy;
     use gtk::glib::{ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecObject, ParamSpecUInt};
 
-    use crate::audio::{shuffle::ShuffleListModel, song::Song};
+    use crate::{
+        audio::{shuffle::ShuffleListModel, song::Song},
+        bilibili::data::parse_config,
+    };
 
     use super::*;
 
@@ -30,6 +33,13 @@ mod imp {
         fn new() -> Self {
             let store = gio::ListStore::new(Song::static_type());
             let model = ShuffleListModel::new(Some(&store));
+
+            if let Ok(data) = parse_config() {
+                for i in data {
+                    let song = Song::new(i);
+                    store.append(&song);
+                }
+            }
 
             Self {
                 store,
@@ -129,7 +139,7 @@ impl Queue {
         let n = self.model().n_items();
         for i in 1..n {
             let iter = self.model().item(i).unwrap().downcast::<Song>().unwrap();
-            if song.imp().data.borrow().bvid() == iter.imp().data.borrow().bvid() {
+            if *song.imp().data.borrow() == *iter.imp().data.borrow() {
                 return;
             }
         }

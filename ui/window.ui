@@ -3,28 +3,7 @@
   <requires lib="gtk" version="4.0"/>
 
   <!--Add popover-->
-  <object class="GtkPopover" id="popover-add">
-    <child>
-      <object class="GtkBox">
-        <property name="orientation">horizontal</property>
-        <child>
-          <object class="GtkEntry" id="bv_input">
-            <property name="width_request">200</property>
-            <style>
-              <class name="flat"/>
-            </style>
-          </object>
-        </child>
-        <child>
-          <object class="GtkButton" id="add_confirm">
-            <property name="label">确定</property>
-            <style>
-              <class name="flat"/>
-            </style>
-          </object>
-        </child>
-      </object>
-    </child>
+  <object class="BvidInputView" id="bvid_input_view">
   </object>
 
   <!--BiliBiliMusicWin-->
@@ -58,7 +37,7 @@
                     <property name="visible">True</property>
                     <property name="tooltip-text" translatable="yes">添加 BV 号</property>
                     <property name="icon-name">value-increase-symbolic</property>
-                    <property name="popover">popover-add</property>
+                    <property name="popover">bvid_input_view</property>
                     <style>
                       <class name="flat"/>
                     </style>
