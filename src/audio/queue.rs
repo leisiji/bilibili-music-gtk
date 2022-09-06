@@ -120,6 +120,14 @@ impl Queue {
         self.imp().model.n_items() == 0
     }
 
+    pub fn is_first_song(&self) -> bool {
+        if let Some(current_pos) = self.imp().current_pos.get() {
+            return current_pos == 0;
+        }
+
+        false
+    }
+
     pub fn current_song(&self) -> Option<Song> {
         if let Some(pos) = self.imp().current_pos.get() {
             return self.song_at(pos);
@@ -183,6 +191,19 @@ impl Queue {
     fn sync_config(&self) {
         let data: Vec<SongData> = self.to_vec();
         write_config(data).unwrap();
+    }
+
+    pub fn previous_song(&self) -> Option<Song> {
+        if let Some(current_pos) = self.imp().current_pos.get() {
+            if current_pos > 0 {
+                let prev = current_pos - 1;
+                self.imp().current_pos.replace(Some(prev));
+                self.notify("current");
+                return self.song_at(current_pos - 1);
+            }
+        }
+
+        None
     }
 
     pub fn next_song(&self) -> Option<Song> {

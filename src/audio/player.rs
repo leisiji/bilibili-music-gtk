@@ -1,6 +1,6 @@
 use std::{rc::Rc, sync::Arc};
 
-use gstreamer_player::prelude::Cast;
+use gstreamer_player::{prelude::Cast, gst::ClockTime};
 use gtk::glib::{self, clone, MainContext, Sender};
 
 use super::{queue::Queue, song::SongData, state::PlayerState, Song};
@@ -22,6 +22,7 @@ impl Default for RepeatMode {
 
 pub enum PlayerAction {
     PlaySong(String),
+    PlayNext,
     AddSong(SongData),
     UpdatePosition(u64),
 }
@@ -47,50 +48,35 @@ pub struct AudioPlayer {
 }
 
 impl AudioPlayer {
-    fn play_song(&self, song: Song) {
-        song.set_playing(true);
 
-        if let Some(uri) = song.uri() {
-            self.backend.set_uri(Some(uri.as_str()));
-        } else {
-            let song_data = song.song_data();
-            let tx = self.tx.clone();
-            MainContext::default().spawn(async move {
-                if let Ok(uri) = song_data.download() {
-                    debug!("Download success {}.", uri);
-                    tx.send(PlayerAction::PlaySong(uri)).unwrap();
-                }
-            });
-        }
-
-        self.state.set_current_song(Some(song));
+    fn download_song(&self, song: Song) {
+        let song_data = song.song_data();
+        let tx = self.tx.clone();
+        MainContext::default().spawn(async move {
+            if let Ok(uri) = song_data.download() {
+                debug!("Download success {}.", uri);
+                tx.send(PlayerAction::PlaySong(uri)).unwrap();
+            }
+        });
     }
 
     fn set_playback_state(&self, state: PlaybackState) {
-        if self.state.current_song() == None {
-            if let Some(next_song) = self.queue.next_song() {
-                self.play_song(next_song);
-                self.state.set_playback_state(&state);
-
-                match state {
-                    PlaybackState::Playing => self.backend.play(),
-                    PlaybackState::Paused => self.backend.pause(),
-                    PlaybackState::Stopped => self.backend.stop(),
-                }
-            } else {
-                self.backend.set_uri(None);
-                self.state.set_current_song(None);
-                self.state.set_playback_state(&PlaybackState::Stopped);
-            }
-        }
-
-        self.state.set_playback_state(&state);
-
         match state {
-            PlaybackState::Playing => self.backend.play(),
+            PlaybackState::Playing => {
+                if let Some(song) = self.state.current_song() {
+                    if let Some(uri) = song.uri() {
+                        self.backend.set_uri(Some(uri.as_str()));
+                    } else {
+                        self.state.set_playback_state(&PlaybackState::Stopped);
+                        self.download_song(song);
+                    }
+                }
+                self.backend.play();
+            },
             PlaybackState::Paused => self.backend.pause(),
             PlaybackState::Stopped => self.backend.stop(),
         }
+        self.state.set_playback_state(&state);
     }
 
     pub fn skip_to(&self, pos: u32) {
@@ -103,18 +89,41 @@ impl AudioPlayer {
         }
 
         if let Some(song) = self.queue.skip_song(pos) {
-            let was_playing = self.state.playing();
-            if was_playing {
-                self.set_playback_state(PlaybackState::Paused);
-            }
-            self.play_song(song);
-            if was_playing {
-                self.set_playback_state(PlaybackState::Playing);
-            }
+            self.state.set_current_song(Some(song));
+            self.set_playback_state(PlaybackState::Playing);
         } else {
             self.backend.set_uri(None);
             self.state.set_current_song(None);
             self.set_playback_state(PlaybackState::Stopped);
+        }
+    }
+
+    pub fn skip_next(&self) {
+        if let Some(current_song) = self.state.current_song() {
+            current_song.set_playing(false);
+        }
+
+        if let Some(next_song) = self.queue.next_song() {
+            self.state.set_current_song(Some(next_song));
+            self.set_playback_state(PlaybackState::Playing);
+        } else {
+            self.state.set_current_song(None);
+            self.set_playback_state(PlaybackState::Stopped);
+        }
+    }
+
+    pub fn skip_previous(&self) {
+        if let Some(_) = self.state.current_song() {
+            if self.queue.is_first_song() {
+                return;
+            }
+        }
+
+        if let Some(prev_song) = self.queue.previous_song() {
+            prev_song.set_playing(true);
+            self.state.set_current_song(Some(prev_song));
+            self.backend.seek(ClockTime::from_seconds(0));
+            self.set_playback_state(PlaybackState::Playing);
         }
     }
 
@@ -126,16 +135,22 @@ impl AudioPlayer {
             }
             PlayerAction::PlaySong(uri) => {
                 self.backend.set_uri(Some(uri.as_str()));
-                self.backend.play();
+                if !self.state.playing() {
+                    self.backend.play();
+                    self.set_playback_state(PlaybackState::Playing);
+                }
             }
             PlayerAction::UpdatePosition(pos) => {
                 self.state.set_position(pos);
+            }
+            PlayerAction::PlayNext => {
+                self.skip_next();
             }
         }
         glib::Continue(true)
     }
 
-    fn init_backend(&self) {
+    fn setup_signal(&self) {
         let tx = self.tx.clone();
         self.backend
             .connect_position_updated(move |_, clock| {
@@ -143,6 +158,11 @@ impl AudioPlayer {
                     tx.send(PlayerAction::UpdatePosition(clock.seconds())).unwrap();
                 }
             });
+
+        let tx = self.tx.clone();
+        self.backend.connect_end_of_stream(move |_| {
+            tx.send(PlayerAction::PlayNext).unwrap();
+        });
     }
 
     pub fn new() -> Rc<Self> {
@@ -166,7 +186,7 @@ impl AudioPlayer {
             clone!(@strong audio_player as this => move |action| this.clone().process_action(action))
         );
 
-        audio_player.init_backend();
+        audio_player.setup_signal();
 
         audio_player
     }
@@ -175,13 +195,15 @@ impl AudioPlayer {
         return &self.queue;
     }
 
-    pub fn play(&self) {
-        if !self.state.playing() {
-            self.set_playback_state(PlaybackState::Playing)
-        }
-    }
-
     pub fn state(&self) -> &PlayerState {
         &self.state
+    }
+
+    pub fn toggle_play(&self) {
+        if self.state.playing() {
+            self.set_playback_state(PlaybackState::Paused);
+        } else {
+            self.set_playback_state(PlaybackState::Playing);
+        }
     }
 }

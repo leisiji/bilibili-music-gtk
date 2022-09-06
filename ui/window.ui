@@ -8,10 +8,10 @@
 
   <!--BiliBiliMusicWin-->
   <template class="BiliBiliMusicWindow" parent="AdwApplicationWindow">
-    <property name="visible">True</property>
+    <property name="visible">true</property>
     <property name="default-width">600</property>
     <property name="resizable">true</property>
-    <property name="show-menubar">False</property>
+    <property name="show-menubar">false</property>
 
     <property name="content">
       <object class="GtkWindowHandle">
@@ -34,7 +34,7 @@
                 <child>
                   <object class="GtkMenuButton" id="add_bv_btn">
                     <property name="width_request">42</property>
-                    <property name="visible">True</property>
+                    <property name="visible">true</property>
                     <property name="tooltip-text" translatable="yes">添加 BV 号</property>
                     <property name="icon-name">value-increase-symbolic</property>
                     <property name="popover">bvid_input_view</property>
@@ -52,6 +52,7 @@
             </child>
             <child>
               <object class="PlaybackControl" id="playback_ctl">
+                <property name="hexpand">true</property>
                 <property name="halign">start</property>
                 <property name="margin-top">6</property>
                 <property name="margin-bottom">12</property>

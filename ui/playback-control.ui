@@ -11,11 +11,13 @@
 
     <object class="GtkBox" id="playback_box">
       <property name="orientation">horizontal</property>
+      <property name="hexpand">true</property>
       <child>
         <object class="GtkButton" id="backward_btn">
           <property name="width_request">42</property>
           <property name="tooltip-text" translatable="yes">上一曲</property>
           <property name="icon-name">media-skip-backward-symbolic</property>
+          <property name="action-name">win.previous</property>
           <style>
             <class name="flat"/>
           </style>
@@ -26,6 +28,7 @@
           <property name="width_request">60</property>
           <property name="tooltip_text" translatable="yes">暂停</property>
           <property name="icon-name">media-playback-start-symbolic</property>
+          <property name="action-name">win.play</property>
           <style>
             <class name="flat"/>
           </style>
@@ -36,6 +39,7 @@
           <property name="width_request">42</property>
           <property name="tooltip-text" translatable="yes">下一曲</property>
           <property name="icon-name">media-skip-forward-symbolic</property>
+          <property name="action-name">win.next</property>
           <style>
             <class name="flat"/>
           </style>
@@ -55,8 +59,20 @@
       </child>
       <child>
         <object class="GtkScale" id="seek">
-          <property name="hexpand">True</property>
+          <property name="width_request">500</property>
           <property name="adjustment">seek-adjustment</property>
+        </object>
+      </child>
+      <child>
+        <object class="GtkLabel" id="play_time_label">
+          <property name="ellipsize">end</property>
+          <property name="margin-start">10</property>
+          <property name="margin-end">10</property>
+          <property name="label" translatable="yes">0:00</property>
+          <style>
+            <class name="caption"/>
+            <class name="numeric"/>
+          </style>
         </object>
       </child>
     </object>

@@ -21,6 +21,8 @@ mod imp {
         pub seek: TemplateChild<Scale>,
         #[template_child]
         pub elapsed_label: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub play_time_label: TemplateChild<gtk::Label>,
     }
 
     #[glib::object_subclass]
@@ -70,13 +72,17 @@ impl PlaybackControl {
         self.imp().pause_btn.get()
     }
 
-    pub fn set_elapsed(&self, elapsed: Option<u64>) {
-        if let Some(elapsed) = elapsed {
-            self.imp()
-                .elapsed_label
-                .set_text(&utils::format_time(elapsed));
-        } else {
-            self.imp().elapsed_label.set_text("0:00");
-        }
+    pub fn set_elapsed(&self, elapsed: u64) {
+        let imp = self.imp();
+        imp.elapsed_label
+            .set_text(&utils::format_time(elapsed));
+        imp.seek.set_value(elapsed as f64);
+    }
+
+    pub fn set_range(&self, range: u64) {
+        let imp = self.imp();
+        imp.elapsed_label.set_text("0:00");
+        imp.play_time_label.set_text(&utils::format_time(range));
+        imp.seek.set_range(0.0, range as f64);
     }
 }

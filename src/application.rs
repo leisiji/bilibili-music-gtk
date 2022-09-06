@@ -25,6 +25,10 @@ mod imp {
     impl ObjectImpl for Application {
         fn constructed(&self, obj: &Self::Type) {
             self.parent_constructed(obj);
+
+            obj.set_accels_for_action("win.next", &["n"]);
+            obj.set_accels_for_action("win.previous", &["p"]);
+            obj.set_accels_for_action("win.play", &[" "]);
         }
     }
 

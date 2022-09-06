@@ -44,6 +44,16 @@ mod imp {
 
         fn class_init(klass: &mut Self::Class) {
             Self::bind_template(klass);
+
+            klass.install_action("win.play", None, move |win, _, _| {
+                win.imp().player.toggle_play();
+            });
+            klass.install_action("win.previous", None, move |win, _, _| {
+                win.imp().player.skip_previous();
+            });
+            klass.install_action("win.next", None, move |win, _, _| {
+                win.imp().player.skip_next();
+            });
         }
 
         fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
@@ -112,12 +122,13 @@ impl Window {
         state.connect_notify_local(
             Some("position"),
             clone!(@weak self as win => move |state, _| {
-                if state.current_song().is_some() {
-                    let elapsed = state.position();
-                    win.imp().playback_ctl.set_elapsed(Some(elapsed));
-                } else {
-                    win.imp().playback_ctl.set_elapsed(None);
+                let elapsed = state.position();
+                if elapsed == 0 {
+                    if let Some(song) = state.current_song() {
+                        win.imp().playback_ctl.set_range(song.duration());
+                    }
                 }
+                win.imp().playback_ctl.set_elapsed(elapsed);
             }),
         );
     }
@@ -183,7 +194,6 @@ impl Window {
                     queue.select_song_at(pos);
                 } else if queue.current_song_index() != Some(pos) {
                     imp.player.skip_to(pos);
-                    imp.player.play();
                 }
             }),
         );
