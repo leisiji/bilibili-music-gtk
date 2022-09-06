@@ -5,7 +5,7 @@ mod imp {
     use gtk::{CompositeTemplate, TemplateChild};
 
     #[derive(CompositeTemplate, Default)]
-    #[template(resource = "/org/bilibili/music/bvid_input_view.ui")]
+    #[template(resource = "/org/bilibili/music/bvid-input-view.ui")]
     pub struct BvidInputView {
         #[template_child]
         pub confirm_btn: TemplateChild<gtk::Button>,

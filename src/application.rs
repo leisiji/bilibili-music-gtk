@@ -28,7 +28,7 @@ mod imp {
 
             obj.set_accels_for_action("win.next", &["n"]);
             obj.set_accels_for_action("win.previous", &["p"]);
-            obj.set_accels_for_action("win.play", &[" "]);
+            // obj.set_accels_for_action("win.play", &["<space>"]);
         }
     }
 

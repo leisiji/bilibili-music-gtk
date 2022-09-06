@@ -7,6 +7,7 @@ mod playlist_view;
 mod queue_row;
 mod utils;
 mod window;
+mod volume_control;
 
 use application::Application;
 use gtk::{gio, glib, prelude::*};

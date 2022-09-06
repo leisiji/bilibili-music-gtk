@@ -5,7 +5,8 @@
     <file compressed="true" preprocess="xml-stripblanks">playback-control.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">playlist.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">queue-row.ui</file>
-    <file compressed="true" preprocess="xml-stripblanks">bvid_input_view.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">bvid-input-view.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">volume-control.ui</file>
     <file alias="style.css">style.css</file>
   </gresource>
 </gresources>

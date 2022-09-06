@@ -201,9 +201,15 @@ impl AudioPlayer {
 
     pub fn toggle_play(&self) {
         if self.state.playing() {
-            self.set_playback_state(PlaybackState::Paused);
+            self.backend.pause();
+            self.state.set_playback_state(&PlaybackState::Paused);
         } else {
-            self.set_playback_state(PlaybackState::Playing);
+            self.backend.play();
+            self.state.set_playback_state(&PlaybackState::Playing);
         }
+    }
+
+    pub fn set_volume(&self, volume: f64) {
+        self.backend.set_volume(volume);
     }
 }

@@ -59,7 +59,7 @@
       </child>
       <child>
         <object class="GtkScale" id="seek">
-          <property name="width_request">500</property>
+          <property name="width-request">500</property>
           <property name="adjustment">seek-adjustment</property>
         </object>
       </child>
@@ -73,6 +73,11 @@
             <class name="caption"/>
             <class name="numeric"/>
           </style>
+        </object>
+      </child>
+      <child>
+        <object class="VolumeControl" id="volume_control">
+          <property name="hexpand">true</property>
         </object>
       </child>
     </object>

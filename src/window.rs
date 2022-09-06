@@ -78,6 +78,7 @@ mod imp {
             self.parent_constructed(obj);
             obj.setup_playlist();
             obj.bind_state();
+            obj.connect_signals();
             obj.setup_provider();
             obj.restore_window_state();
         }
@@ -98,6 +99,16 @@ glib::wrapper! {
 impl Window {
     pub fn new<P: glib::IsA<gtk::Application>>(application: &P) -> Self {
         glib::Object::new(&[("application", application)]).expect("Failed to create Window")
+    }
+
+    fn connect_signals(&self) {
+        let volume_control = self.imp().playback_ctl.volume_control();
+        volume_control.connect_notify_local(
+            Some("volume"),
+            clone!(@weak self as win => move |control, _| {
+                win.imp().player.set_volume(control.volume());
+            }),
+        );
     }
 
     // Bind the PlayerState to the UI

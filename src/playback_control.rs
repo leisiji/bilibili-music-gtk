@@ -1,8 +1,10 @@
 use gtk::{gio, glib, prelude::*, subclass::prelude::*, CompositeTemplate};
 
-use crate::utils;
+use crate::{utils, volume_control::VolumeControl};
 
 mod imp {
+    use crate::volume_control::VolumeControl;
+
     use super::*;
     use gtk::{Box, Button, Scale};
 
@@ -23,6 +25,8 @@ mod imp {
         pub elapsed_label: TemplateChild<gtk::Label>,
         #[template_child]
         pub play_time_label: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub volume_control: TemplateChild<VolumeControl>,
     }
 
     #[glib::object_subclass]
@@ -84,5 +88,9 @@ impl PlaybackControl {
         imp.elapsed_label.set_text("0:00");
         imp.play_time_label.set_text(&utils::format_time(range));
         imp.seek.set_range(0.0, range as f64);
+    }
+
+    pub fn volume_control(&self) -> VolumeControl {
+        self.imp().volume_control.get()
     }
 }
