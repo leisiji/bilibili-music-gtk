@@ -6,8 +6,8 @@ mod playback_control;
 mod playlist_view;
 mod queue_row;
 mod utils;
-mod window;
 mod volume_control;
+mod window;
 
 use application::Application;
 use gtk::{gio, glib, prelude::*};

@@ -76,10 +76,13 @@ impl PlaybackControl {
         self.imp().pause_btn.get()
     }
 
+    pub fn seek(&self) -> gtk::Scale {
+        self.imp().seek.get()
+    }
+
     pub fn set_elapsed(&self, elapsed: u64) {
         let imp = self.imp();
-        imp.elapsed_label
-            .set_text(&utils::format_time(elapsed));
+        imp.elapsed_label.set_text(&utils::format_time(elapsed));
         imp.seek.set_value(elapsed as f64);
     }
 

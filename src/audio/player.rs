@@ -1,6 +1,6 @@
 use std::{rc::Rc, sync::Arc};
 
-use gstreamer_player::{prelude::Cast, gst::ClockTime};
+use gstreamer_player::{gst::ClockTime, prelude::Cast};
 use gtk::glib::{self, clone, MainContext, Sender};
 
 use super::{queue::Queue, song::SongData, state::PlayerState, Song};
@@ -25,6 +25,7 @@ pub enum PlayerAction {
     PlayNext,
     AddSong(SongData),
     UpdatePosition(u64),
+    VolumeChanged(f64),
 }
 
 #[derive(PartialEq, Copy, Clone)]
@@ -48,7 +49,6 @@ pub struct AudioPlayer {
 }
 
 impl AudioPlayer {
-
     fn download_song(&self, song: Song) {
         let song_data = song.song_data();
         let tx = self.tx.clone();
@@ -72,7 +72,7 @@ impl AudioPlayer {
                     }
                 }
                 self.backend.play();
-            },
+            }
             PlaybackState::Paused => self.backend.pause(),
             PlaybackState::Stopped => self.backend.stop(),
         }
@@ -146,22 +146,31 @@ impl AudioPlayer {
             PlayerAction::PlayNext => {
                 self.skip_next();
             }
+            PlayerAction::VolumeChanged(volume) => {
+                self.state.set_volume(volume);
+            }
         }
         glib::Continue(true)
     }
 
     fn setup_signal(&self) {
         let tx = self.tx.clone();
-        self.backend
-            .connect_position_updated(move |_, clock| {
-                if let Some(clock) = clock {
-                    tx.send(PlayerAction::UpdatePosition(clock.seconds())).unwrap();
-                }
-            });
+        self.backend.connect_position_updated(move |_, clock| {
+            if let Some(clock) = clock {
+                tx.send(PlayerAction::UpdatePosition(clock.seconds()))
+                    .unwrap();
+            }
+        });
 
         let tx = self.tx.clone();
         self.backend.connect_end_of_stream(move |_| {
             tx.send(PlayerAction::PlayNext).unwrap();
+        });
+
+        let tx = self.tx.clone();
+        self.backend.connect_volume_changed(move |player| {
+            let volume = player.volume();
+            tx.send(PlayerAction::VolumeChanged(volume)).unwrap();
         });
     }
 
@@ -211,5 +220,12 @@ impl AudioPlayer {
 
     pub fn set_volume(&self, volume: f64) {
         self.backend.set_volume(volume);
+    }
+
+    pub fn seek(&self, percent: f64) {
+        if let Some(song) = self.state.current_song() {
+            let seek_time = percent * (song.duration() as f64);
+            self.backend.seek(ClockTime::from_seconds(seek_time as u64));
+        }
     }
 }

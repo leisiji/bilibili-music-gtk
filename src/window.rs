@@ -142,6 +142,13 @@ impl Window {
                 win.imp().playback_ctl.set_elapsed(elapsed);
             }),
         );
+        self.imp().playback_ctl.seek().connect_change_value(
+            clone!(@strong self as win => move |seek, _, value| {
+                let percent = value / seek.adjustment().upper();
+                win.imp().player.seek(percent);
+                gtk::Inhibit(true)
+            }),
+        );
     }
 
     fn setup_playlist(&self) {
