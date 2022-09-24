@@ -204,17 +204,15 @@ impl Window {
         selection_model.set_selected(gtk::INVALID_LIST_POSITION);
         queue_view.set_model(Some(&selection_model));
 
-        self.imp().playlist_view.queue_view().connect_activate(
-            clone!(@weak self as win => move |_, pos| {
-                let imp = win.imp();
-                let queue = imp.player.queue();
-                if win.playlist_selection() {
-                    queue.select_song_at(pos);
-                } else if queue.current_song_index() != Some(pos) {
-                    imp.player.skip_to(pos);
-                }
-            }),
-        );
+        queue_view.connect_activate(clone!(@weak self as win => move |_, pos| {
+            let imp = win.imp();
+            let queue = imp.player.queue();
+            if win.playlist_selection() {
+                queue.select_song_at(pos);
+            } else if queue.current_song_index() != Some(pos) {
+                imp.player.skip_to(pos);
+            }
+        }));
 
         self.imp().bvid_input_view.confirm_btn().connect_clicked(
             clone!(@weak self as win => move |_| {

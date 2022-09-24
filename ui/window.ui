@@ -9,7 +9,6 @@
   <!--BiliBiliMusicWin-->
   <template class="BiliBiliMusicWindow" parent="AdwApplicationWindow">
     <property name="visible">true</property>
-    <property name="default-width">600</property>
     <property name="resizable">true</property>
     <property name="show-menubar">false</property>
 

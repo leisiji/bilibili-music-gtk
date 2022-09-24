@@ -16,6 +16,7 @@
     <child>
       <object class="GtkImage" id="volume_high_image">
         <property name="icon-name">audio-volume-high-symbolic</property>
+        <property name="margin-end">10</property>
       </object>
     </child>
   </template>

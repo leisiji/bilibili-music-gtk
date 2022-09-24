@@ -1,7 +1,7 @@
 use std::{rc::Rc, sync::Arc};
 
 use gstreamer_player::{gst::ClockTime, prelude::Cast};
-use gtk::glib::{self, clone, MainContext, Sender};
+use gtk::glib::{self, clone, Sender};
 
 use super::{queue::Queue, song::SongData, state::PlayerState, Song};
 use log::debug;
@@ -52,7 +52,7 @@ impl AudioPlayer {
     fn download_song(&self, song: Song) {
         let song_data = song.song_data();
         let tx = self.tx.clone();
-        MainContext::default().spawn(async move {
+        std::thread::spawn(move || {
             if let Ok(uri) = song_data.download() {
                 debug!("Download success {}.", uri);
                 tx.send(PlayerAction::PlaySong(uri)).unwrap();
@@ -134,11 +134,12 @@ impl AudioPlayer {
                 self.queue.add_song(&song);
             }
             PlayerAction::PlaySong(uri) => {
-                self.backend.set_uri(Some(uri.as_str()));
-                if !self.state.playing() {
-                    self.backend.play();
-                    self.set_playback_state(PlaybackState::Playing);
+                let was_playing = self.state.playing();
+                if was_playing {
+                    self.backend.stop();
                 }
+                self.backend.set_uri(Some(uri.as_str()));
+                self.backend.play();
             }
             PlayerAction::UpdatePosition(pos) => {
                 self.state.set_position(pos);

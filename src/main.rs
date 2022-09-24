@@ -13,6 +13,7 @@ use application::Application;
 use gtk::{gio, glib, prelude::*};
 
 fn main() {
+    pretty_env_logger::init();
     gio::resources_register_include!("bilibili-music-gtk4.gresource").unwrap();
 
     glib::set_application_name("BiliBili");

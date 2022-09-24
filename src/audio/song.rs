@@ -43,6 +43,10 @@ impl SongData {
         self.title.as_str()
     }
 
+    pub fn file_name(&self) -> String {
+        self.title().replace("/", ",")
+    }
+
     pub fn duration(&self) -> u64 {
         self.duration
     }
@@ -66,7 +70,7 @@ impl SongData {
     }
 
     pub fn download(&self) -> Result<String> {
-        let song_path = CACHE_DIR.join(self.title());
+        let song_path = CACHE_DIR.join(self.file_name());
         let url = get_url(self.bvid.as_str(), self.cid)?;
         download_url(url.as_str(), song_path.to_str().unwrap())?;
         let uri = format!("file://{}", song_path.display());
@@ -223,6 +227,10 @@ impl Song {
         self.imp().data.borrow().title().to_string()
     }
 
+    pub fn file_name(&self) -> String {
+        self.imp().data.borrow().file_name()
+    }
+
     pub fn album(&self) -> String {
         match self.imp().data.borrow().album() {
             Some(album) => album.to_string(),
@@ -243,7 +251,7 @@ impl Song {
     }
 
     pub fn uri(&self) -> Option<String> {
-        let song_path = CACHE_DIR.join(self.title());
+        let song_path = CACHE_DIR.join(self.file_name());
         if song_path.exists() {
             Some(format!("file://{}", song_path.display()))
         } else {
