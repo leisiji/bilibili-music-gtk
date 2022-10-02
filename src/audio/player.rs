@@ -66,12 +66,13 @@ impl AudioPlayer {
                 if let Some(song) = self.state.current_song() {
                     if let Some(uri) = song.uri() {
                         self.backend.set_uri(Some(uri.as_str()));
+                        debug!("{}", uri);
+                        self.backend.play();
                     } else {
                         self.state.set_playback_state(&PlaybackState::Stopped);
                         self.download_song(song);
                     }
                 }
-                self.backend.play();
             }
             PlaybackState::Paused => self.backend.pause(),
             PlaybackState::Stopped => self.backend.stop(),
@@ -138,6 +139,7 @@ impl AudioPlayer {
                 if was_playing {
                     self.backend.stop();
                 }
+                debug!("{}", uri);
                 self.backend.set_uri(Some(uri.as_str()));
                 self.backend.play();
             }

@@ -253,7 +253,8 @@ impl Song {
     pub fn uri(&self) -> Option<String> {
         let song_path = CACHE_DIR.join(self.file_name());
         if song_path.exists() {
-            Some(format!("file://{}", song_path.display()))
+            let s = glib::filename_to_uri(song_path, None).unwrap().into();
+            Some(s)
         } else {
             None
         }
@@ -266,7 +267,8 @@ impl Song {
 
 #[cfg(test)]
 mod test {
-    use crate::audio::SongData;
+    use crate::{audio::SongData, config::CACHE_DIR};
+    use gtk::glib;
 
     use super::Song;
 
@@ -274,11 +276,9 @@ mod test {
     fn test_song() {
         let data = SongData::from_bvid("BV1qf4y1d7d1").unwrap();
         let song = Song::new(data);
-        println!(
-            "title: {}, artist: {}, cid: {}",
-            song.title(),
-            song.artist(),
-            song.cid()
-        );
+        let song_path = CACHE_DIR.join(song.file_name());
+        let uri = glib::filename_to_uri(song_path, None);
+        let s: String = uri.unwrap().into();
+        println!("{}", s);
     }
 }
