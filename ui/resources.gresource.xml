@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
+  <gresource prefix="/org/bilibili/music/icons/scalable/actions/">
+    <file alias="selection-mode-symbolic.svg">selection-mode-symbolic.svg</file>
+    <file alias="app-remove-symbolic.svg">app-remove-symbolic.svg</file>
+  </gresource>
   <gresource prefix="/org/bilibili/music/">
     <file compressed="true" preprocess="xml-stripblanks">window.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">playback-control.ui</file>

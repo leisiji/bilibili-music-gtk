@@ -4,24 +4,45 @@
 
   <template class="PlayListView" parent="GtkWidget">
     <child>
-
-      <object class="GtkScrolledWindow" id="playlist_window">
-        <property name="hscrollbar-policy">never</property>
-        <property name="vscrollbar-policy">automatic</property>
-        <property name="propagate-natural-height">true</property>
-        <property name="propagate-natural-width">true</property>
-        <property name="max-content-width">400</property>
-        <property name="child">
-          <object class="GtkListView" id="queue_view">
-            <property name="single-click-activate">true</property>
-            <property name="hexpand">true</property>
-            <style>
-              <class name="navigation-sidebar"/>
-            </style>
+      <object class="GtkBox" id="playlist_box">
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkScrolledWindow" id="playlist_window">
+            <property name="hscrollbar-policy">never</property>
+            <property name="vscrollbar-policy">automatic</property>
+            <property name="propagate-natural-height">true</property>
+            <property name="propagate-natural-width">true</property>
+            <property name="max-content-width">400</property>
+            <property name="child">
+              <object class="GtkListView" id="queue_view">
+                <property name="single-click-activate">true</property>
+                <property name="hexpand">true</property>
+                <style>
+                  <class name="navigation-sidebar"/>
+                </style>
+              </object>
+            </property>
           </object>
-        </property>
+        </child>
+        <child>
+          <object class="GtkActionBar" id="queue_actionbar">
+            <property name="revealed">false</property>
+            <child type="center">
+              <object class="GtkLabel" id="queue_selected_label">
+                <style>
+                  <class name="caption"/>
+                </style>
+              </object>
+            </child>
+            <child type="end">
+              <object class="GtkButton" id="queue_remove_button">
+                <property name="icon-name">app-remove-symbolic</property>
+                <property name="tooltip-text" translatable="yes">Remove selected songs</property>
+              </object>
+            </child>
+          </object>
+        </child>
       </object>
-
     </child>
   </template>
 

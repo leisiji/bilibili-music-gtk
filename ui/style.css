@@ -17,6 +17,11 @@ queuerow checkbutton.selection-mode {
   padding-left: 8px;
 }
 
+queuerow .currently-playing {
+  padding-left: 6px;
+  font-weight: 700;
+}
+
 scrolledwindow undershoot.top {
   box-shadow: inset 0 1px @borders;
 }

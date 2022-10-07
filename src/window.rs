@@ -12,6 +12,10 @@ use crate::audio::{PlayerAction, Song, SongData};
 use crate::queue_row::QueueRow;
 
 mod imp {
+    use glib::{ParamFlags, ParamSpec, ParamSpecBoolean};
+    use gstreamer::glib::once_cell::sync::Lazy;
+    use gtk::glib;
+
     use crate::{
         audio::AudioPlayer, bilibili::BvidInputView, playback_control::PlaybackControl,
         playlist_view::PlayListView,
@@ -54,6 +58,7 @@ mod imp {
             klass.install_action("win.next", None, move |win, _, _| {
                 win.imp().player.skip_next();
             });
+            klass.install_property_action("queue.select", "playlist-selection");
         }
 
         fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
@@ -82,6 +87,39 @@ mod imp {
             obj.setup_provider();
             obj.restore_window_state();
         }
+
+        fn properties() -> &'static [glib::ParamSpec] {
+            static PROPERTIES: Lazy<Vec<ParamSpec>> = Lazy::new(|| {
+                vec![ParamSpecBoolean::new(
+                    "playlist-selection",
+                    "",
+                    "",
+                    false,
+                    ParamFlags::READWRITE,
+                )]
+            });
+            PROPERTIES.as_ref()
+        }
+
+        fn set_property(
+            &self,
+            obj: &Self::Type,
+            _id: usize,
+            value: &glib::Value,
+            pspec: &ParamSpec,
+        ) {
+            match pspec.name() {
+                "playlist-selection" => obj.set_playlist_selection(value.get::<bool>().unwrap()),
+                _ => unimplemented!(),
+            }
+        }
+
+        fn property(&self, obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> glib::Value {
+            match pspec.name() {
+                "playlist-selection" => obj.playlist_selection().to_value(),
+                _ => unimplemented!(),
+            }
+        }
     }
 
     impl WidgetImpl for Window {}
@@ -109,6 +147,24 @@ impl Window {
                 win.imp().player.set_volume(control.volume());
             }),
         );
+
+        self.imp()
+            .playlist_view
+            .queue_remove_button()
+            .connect_clicked(clone!(@weak self as win => move |_| {
+                let queue = win.imp().player.queue();
+                let mut remove_songs: Vec<Song> = Vec::new();
+                for idx in 0..queue.n_songs() {
+                    let song = queue.song_at(idx).unwrap();
+                    if song.selected() {
+                        remove_songs.push(song);
+                    }
+                }
+
+                for song in remove_songs {
+                    win.remove_song(&song);
+                }
+            }));
     }
 
     // Bind the PlayerState to the UI
@@ -159,7 +215,6 @@ impl Window {
             let row = QueueRow::default();
             list_item.set_child(Some(&row));
 
-            /*
             row.connect_notify_local(
                 Some("selected"),
                 clone!(@weak win => move |_, _| {
@@ -170,7 +225,6 @@ impl Window {
                 .bind_property("playlist-selection", &row, "selection-mode")
                 .flags(glib::BindingFlags::DEFAULT)
                 .build();
-            */
 
             /* 将 list_item 的 item 属性绑定 song 属性 */
             list_item
@@ -252,14 +306,39 @@ impl Window {
                 queue.unselect_all_songs();
             }
 
-            /*
             self.imp()
                 .playlist_view
                 .queue_actionbar()
                 .set_revealed(selection);
-            */
 
             self.notify("playlist-selection");
         }
+    }
+
+    fn update_selected_count(&self) {
+        let queue = self.imp().player.queue();
+        let n_selected = queue.n_selected_songs();
+
+        let selected_str = if n_selected == 0 {
+            "No song selected".to_string()
+        } else {
+            format!("{} songs selected", n_selected)
+        };
+
+        self.imp()
+            .playlist_view
+            .queue_selected_label()
+            .set_label(&selected_str);
+    }
+
+    pub fn remove_song(&self, song: &Song) {
+        let imp = self.imp();
+        if song.playing() {
+            imp.player.skip_next();
+        }
+        let queue = imp.player.queue();
+        queue.remove_song(song);
+
+        self.update_selected_count();
     }
 }

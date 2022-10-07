@@ -1,6 +1,6 @@
+use log::debug;
 use std::fs::File;
 use std::io::Write;
-use log::debug;
 
 use anyhow::{Ok, Result};
 

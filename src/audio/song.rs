@@ -263,6 +263,14 @@ impl Song {
     pub fn song_data(&self) -> SongData {
         self.imp().data.borrow().clone()
     }
+
+    pub fn equals(&self, other: &Self) -> bool {
+        *self.imp().data.borrow() == *other.imp().data.borrow()
+    }
+
+    pub fn playing(&self) -> bool {
+        self.imp().playing.get()
+    }
 }
 
 #[cfg(test)]

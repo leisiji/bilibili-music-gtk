@@ -147,7 +147,7 @@ impl Queue {
         let n = self.model().n_items();
         for i in 1..n {
             let iter = self.model().item(i).unwrap().downcast::<Song>().unwrap();
-            if *song.imp().data.borrow() == *iter.imp().data.borrow() {
+            if song.equals(&iter) {
                 return;
             }
         }
@@ -246,5 +246,43 @@ impl Queue {
             let song = self.imp().store.item(i).unwrap();
             song.downcast_ref::<Song>().unwrap().set_selected(false);
         }
+    }
+
+    pub fn n_selected_songs(&self) -> u32 {
+        let mut count = 0;
+        for i in 0..self.imp().store.n_items() {
+            let song = self.imp().store.item(i).unwrap();
+            if song.downcast_ref::<Song>().unwrap().selected() {
+                count += 1;
+            }
+        }
+
+        count
+    }
+
+    pub fn remove_song(&self, song: &Song) {
+        let was_shuffled = self.imp().model.shuffled();
+        let n_songs = self.n_songs();
+        for pos in 0..n_songs {
+            let s = self
+                .imp()
+                .store
+                .item(pos)
+                .unwrap()
+                .downcast::<Song>()
+                .unwrap();
+            if s.equals(song) {
+                self.imp().store.remove(pos);
+                break;
+            }
+        }
+
+        if n_songs != self.n_songs() {
+            if was_shuffled {
+                self.imp().model.reshuffle();
+            }
+            self.notify("n-songs");
+        }
+        self.sync_config();
     }
 }

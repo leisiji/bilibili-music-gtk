@@ -9,6 +9,12 @@ mod imp {
     pub struct PlayListView {
         #[template_child]
         pub queue_view: TemplateChild<ListView>,
+        #[template_child]
+        pub queue_actionbar: TemplateChild<gtk::ActionBar>,
+        #[template_child]
+        pub queue_remove_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub queue_selected_label: TemplateChild<gtk::Label>,
     }
 
     #[glib::object_subclass]
@@ -59,5 +65,17 @@ impl PlayListView {
 
     pub fn queue_view(&self) -> ListView {
         self.imp().queue_view.get()
+    }
+
+    pub fn queue_actionbar(&self) -> gtk::ActionBar {
+        self.imp().queue_actionbar.get()
+    }
+
+    pub fn queue_remove_button(&self) -> gtk::Button {
+        self.imp().queue_remove_button.get()
+    }
+
+    pub fn queue_selected_label(&self) -> gtk::Label {
+        self.imp().queue_selected_label.get()
     }
 }

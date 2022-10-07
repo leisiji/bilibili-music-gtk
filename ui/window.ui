@@ -42,6 +42,17 @@
                     </style>
                   </object>
                 </child>
+                <child>
+                  <object class="GtkToggleButton" id="select_button">
+                    <property name="icon-name">selection-mode-symbolic</property>
+                    <property name="action-name">queue.select</property>
+                    <property name="valign">center</property>
+                    <property name="tooltip-text" translatable="yes">Select songs in the playlist</property>
+                    <style>
+                      <class name="flat"/>
+                    </style>
+                  </object>
+                </child>
               </object>
             </child>
             <child type="flap">
