@@ -1,4 +1,4 @@
-use gtk::{gio, glib, prelude::*, subclass::prelude::*, CompositeTemplate};
+use gtk::{gio, glib::{self, clone}, prelude::*, subclass::prelude::*, CompositeTemplate};
 
 mod imp {
     use std::cell::RefCell;
@@ -88,6 +88,11 @@ mod imp {
                 _ => unimplemented!(),
             }
         }
+
+        fn constructed(&self, obj: &Self::Type) {
+            self.parent_constructed(obj);
+            obj.init_widgets();
+        }
     }
 
     impl WidgetImpl for SongRow {}
@@ -106,6 +111,16 @@ impl Default for SongRow {
 }
 
 impl SongRow {
+    fn init_widgets(&self) {
+        self.imp().selected_button.connect_active_notify(
+            clone!(@strong self as this => move |button| {
+                if let Some(ref song) = *this.imp().song.borrow() {
+                    song.set_selected(button.is_active());
+                }
+                this.notify("selected");
+            }),
+        );
+    }
     fn set_song_title(&self, title: &str) {
         let imp = self.imp();
         imp.song_title_label.set_label(title);
