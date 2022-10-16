@@ -11,6 +11,8 @@
     <file compressed="true" preprocess="xml-stripblanks">queue-row.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">bvid-input-view.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">volume-control.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">songlist.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">song-row.ui</file>
     <file alias="style.css">style.css</file>
   </gresource>
 </gresources>

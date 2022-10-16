@@ -84,16 +84,14 @@ struct Owner {
 #[derive(Deserialize)]
 struct BiliBiliPageInfo {
     cid: u32,
-    // part: String,
+    part: String,
     duration: u64,
 }
 
 impl BvidInfo {
-    /*
     pub fn get_pages_num(&self) -> usize {
         return self.data.pages.len();
     }
-    */
 
     pub fn get_page_cid(&self, index: usize) -> u32 {
         if let Some(page) = self.data.pages.get(index) {
@@ -109,6 +107,15 @@ impl BvidInfo {
         } else {
             0
         }
+    }
+
+    pub fn get_page_part(&self, index: usize) -> String {
+        if let Some(page) = self.data.pages.get(index) {
+            page.part.clone()
+        } else {
+            "Invalid Song title".to_string()
+        }
+
     }
 
     pub fn get_titile(&self) -> &String {

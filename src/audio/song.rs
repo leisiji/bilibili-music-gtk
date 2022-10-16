@@ -43,8 +43,19 @@ impl SongData {
         self.title.as_str()
     }
 
+    fn escape(s: &str) -> String {
+        s.replace("/", ",")
+    }
+
     pub fn file_name(&self) -> String {
-        self.title().replace("/", ",")
+        if let Some(s) = self.album() {
+            let mut s = Self::escape(s);
+            s.push('-');
+            s.push_str(&Self::escape(self.title()));
+            s
+        } else {
+            Self::escape(self.title())
+        }
     }
 
     pub fn duration(&self) -> u64 {
@@ -55,18 +66,36 @@ impl SongData {
         String::clone(&self.bvid)
     }
 
-    pub fn from_bvid(bvid: &str) -> Result<SongData> {
+    pub fn from_bvid(bvid: &str) -> Result<Vec<SongData>> {
+        let mut songs = Vec::new();
         let bvid_info: BvidInfo = BvidInfo::from_bvid(bvid)?;
-        let song_data = Self {
-            artist: Some(bvid_info.get_author().clone()),
-            title: bvid_info.get_titile().clone(),
-            album: None,
-            duration: bvid_info.get_page_duration(0),
-            bvid: bvid.to_string(),
-            cid: bvid_info.get_page_cid(0),
-        };
 
-        Ok(song_data)
+        let num = bvid_info.get_pages_num();
+        if num == 1 {
+            let song_data = Self {
+                artist: Some(bvid_info.get_author().clone()),
+                title: bvid_info.get_titile().clone(),
+                album: None,
+                duration: bvid_info.get_page_duration(0),
+                bvid: bvid.to_string(),
+                cid: bvid_info.get_page_cid(0),
+            };
+            songs.push(song_data);
+        } else {
+            for i in 0..num {
+                let song_data = Self {
+                    artist: Some(bvid_info.get_author().clone()),
+                    title: bvid_info.get_page_part(i),
+                    album: Some(bvid_info.get_titile().clone()),
+                    duration: bvid_info.get_page_duration(i),
+                    bvid: bvid.to_string(),
+                    cid: bvid_info.get_page_cid(i),
+                };
+                songs.push(song_data);
+            }
+        }
+
+        Ok(songs)
     }
 
     pub fn download(&self) -> Result<String> {
@@ -139,7 +168,7 @@ mod imp {
                 "bvid" => {
                     if let Ok(bvid) = value.get::<&str>() {
                         if let Ok(song_data) = SongData::from_bvid(bvid) {
-                            self.data.replace(song_data);
+                            self.data.replace(song_data.get(0).unwrap().clone());
                             obj.notify("artist");
                             obj.notify("title");
                             obj.notify("album");
@@ -283,7 +312,7 @@ mod test {
     #[test]
     fn test_song() {
         let data = SongData::from_bvid("BV1qf4y1d7d1").unwrap();
-        let song = Song::new(data);
+        let song = Song::new(data.get(0).unwrap().clone());
         let song_path = CACHE_DIR.join(song.file_name());
         let uri = glib::filename_to_uri(song_path, None);
         let s: String = uri.unwrap().into();

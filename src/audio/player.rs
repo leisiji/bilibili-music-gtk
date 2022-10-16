@@ -3,6 +3,8 @@ use std::{rc::Rc, sync::Arc};
 use gstreamer_player::{gst::ClockTime, prelude::Cast};
 use gtk::glib::{self, clone, Sender};
 
+use crate::bilibili::data::parse_config;
+
 use super::{queue::Queue, song::SongData, state::PlayerState, Song};
 use log::debug;
 
@@ -197,6 +199,10 @@ impl AudioPlayer {
             None,
             clone!(@strong audio_player as this => move |action| this.clone().process_action(action))
         );
+
+        if let Ok(data) = parse_config() {
+            audio_player.queue.init(data);
+        }
 
         audio_player.setup_signal();
 

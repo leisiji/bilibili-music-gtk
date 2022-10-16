@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use adw::subclass::prelude::*;
 use glib::clone;
 use gtk::{
@@ -8,8 +10,8 @@ use gtk::{
     CompositeTemplate, SingleSelection,
 };
 
+use crate::{queue_row::QueueRow, bilibili::{SongListView, remove_cache}};
 use crate::audio::{PlayerAction, Song, SongData};
-use crate::queue_row::QueueRow;
 
 mod imp {
     use glib::{ParamFlags, ParamSpec, ParamSpecBoolean};
@@ -17,7 +19,9 @@ mod imp {
     use gtk::glib;
 
     use crate::{
-        audio::AudioPlayer, bilibili::BvidInputView, playback_control::PlaybackControl,
+        audio::AudioPlayer,
+        bilibili::BvidInputView,
+        playback_control::PlaybackControl,
         playlist_view::PlayListView,
     };
     use std::{cell::Cell, rc::Rc};
@@ -58,6 +62,7 @@ mod imp {
             klass.install_action("win.next", None, move |win, _, _| {
                 win.imp().player.skip_next();
             });
+            // 通过 queue-row.ui 的两个 GtkStackPage set_visible_child_name，实现多选控件按需显示的功能
             klass.install_property_action("queue.select", "playlist-selection");
         }
 
@@ -152,18 +157,23 @@ impl Window {
             .playlist_view
             .queue_remove_button()
             .connect_clicked(clone!(@weak self as win => move |_| {
-                let queue = win.imp().player.queue();
+                let imp = win.imp();
+                let queue = imp.player.queue();
                 let mut remove_songs: Vec<Song> = Vec::new();
                 for idx in 0..queue.n_songs() {
                     let song = queue.song_at(idx).unwrap();
                     if song.selected() {
+                        if song.playing() {
+                            imp.player.skip_next();
+                        }
                         remove_songs.push(song);
                     }
                 }
 
-                for song in remove_songs {
-                    win.remove_song(&song);
-                }
+                let queue = imp.player.queue();
+                queue.remove_songs(&remove_songs);
+                remove_cache(&remove_songs);
+                win.update_selected_count();
             }));
     }
 
@@ -231,7 +241,6 @@ impl Window {
                 .bind_property("item", &row, "song")
                 .flags(glib::BindingFlags::DEFAULT)
                 .build();
-
             list_item
                 .property_expression("item")
                 .chain_property::<Song>("artist")
@@ -268,18 +277,50 @@ impl Window {
             }
         }));
 
+        let (tx_songs, rx_songs) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
+        let tx_songs = Arc::new(tx_songs);
+
         self.imp().bvid_input_view.confirm_btn().connect_clicked(
             clone!(@weak self as win => move |_| {
                 let imp = win.imp();
                 let bvid = imp.bvid_input_view.get_input_bvid();
                 let tx = imp.player.tx.clone();
-                win.imp().context.spawn(async move {
+                let tx_songs = tx_songs.clone();
+                imp.context.spawn(async move {
                     if let Ok(data) = SongData::from_bvid(bvid.as_str()) {
-                        tx.send(PlayerAction::AddSong(data)).unwrap();
+                        if data.len() == 1 {
+                            tx.send(PlayerAction::AddSong(data[0].clone())).unwrap();
+                        } else {
+                            tx_songs.send(data).unwrap();
+                        }
                     }
                 });
             }),
         );
+
+        rx_songs.attach(None, clone!(@strong self as win => move |data| {
+            win.create_songlist(data);
+            glib::Continue(true)
+        }));
+    }
+
+    fn create_songlist(&self, data: Vec<SongData>) {
+        let view = SongListView::new(self.dynamic_cast_ref::<gtk::Window>().unwrap());
+        view.init(data);
+
+        view.confirm_btn().connect_clicked(clone!(@weak self as win, @weak view => move |_| {
+            if let Some(data) = view.selected_songs() {
+                win.imp().player.queue().add_songs(&data);
+            }
+            view.upcast::<gtk::Window>().destroy();
+        }));
+
+        view.cancel_btn().connect_clicked(clone!(@weak self as win, @weak view => move |_| {
+            view.upcast::<gtk::Window>().destroy();
+        }));
+
+        let w = view.upcast::<gtk::Window>();
+        w.present();
     }
 
     fn setup_provider(&self) {
@@ -329,16 +370,5 @@ impl Window {
             .playlist_view
             .queue_selected_label()
             .set_label(&selected_str);
-    }
-
-    pub fn remove_song(&self, song: &Song) {
-        let imp = self.imp();
-        if song.playing() {
-            imp.player.skip_next();
-        }
-        let queue = imp.player.queue();
-        queue.remove_song(song);
-
-        self.update_selected_count();
     }
 }

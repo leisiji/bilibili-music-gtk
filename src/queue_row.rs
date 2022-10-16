@@ -184,6 +184,7 @@ impl QueueRow {
 
     fn set_playing(&self, playing: bool) {
         if playing != self.imp().playing.replace(playing) {
+            self.update_mode();
             self.notify("playing");
         }
     }

@@ -5,6 +5,7 @@ mod config;
 mod playback_control;
 mod playlist_view;
 mod queue_row;
+mod song_row;
 mod utils;
 mod volume_control;
 mod window;

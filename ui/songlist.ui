@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <requires lib="gtk" version="4.0"/>
-
-  <template class="PlayListView" parent="GtkWidget">
+  <template class="SongListView" parent="GtkDialog">
     <child>
       <object class="GtkBox">
         <property name="orientation">vertical</property>
@@ -10,15 +9,16 @@
         <property name="margin-bottom">5</property>
         <property name="margin-start">5</property>
         <property name="margin-end">5</property>
+        <property name="hexpand">true</property>
         <child>
           <object class="GtkScrolledWindow">
+            <property name="max-content-height">400</property>
             <property name="hscrollbar-policy">never</property>
             <property name="vscrollbar-policy">automatic</property>
             <property name="propagate-natural-height">true</property>
             <property name="propagate-natural-width">true</property>
-            <property name="max-content-width">400</property>
             <property name="child">
-              <object class="GtkListView" id="queue_view">
+              <object class="GtkListView" id="songs_view">
                 <property name="single-click-activate">true</property>
                 <property name="hexpand">true</property>
                 <style>
@@ -29,8 +29,8 @@
           </object>
         </child>
         <child>
-          <object class="GtkActionBar" id="queue_actionbar">
-            <property name="revealed">false</property>
+          <object class="GtkActionBar" id="songlist_actionbar">
+            <property name="revealed">true</property>
             <child type="center">
               <object class="GtkLabel" id="queue_selected_label">
                 <style>
@@ -39,9 +39,15 @@
               </object>
             </child>
             <child type="end">
-              <object class="GtkButton" id="queue_remove_button">
-                <property name="icon-name">app-remove-symbolic</property>
-                <property name="tooltip-text" translatable="yes">Remove selected songs</property>
+              <object class="GtkButton" id="confirm">
+                <property name="label">确认</property>
+                <property name="tooltip-text" translatable="yes">Add selected songs</property>
+              </object>
+            </child>
+            <child type="end">
+              <object class="GtkButton" id="cancel">
+                <property name="label">取消</property>
+                <property name="tooltip-text" translatable="yes">Add selected songs</property>
               </object>
             </child>
           </object>
@@ -49,5 +55,4 @@
       </object>
     </child>
   </template>
-
 </interface>

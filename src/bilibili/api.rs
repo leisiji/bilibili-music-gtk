@@ -4,6 +4,8 @@ use std::io::Write;
 
 use anyhow::{Ok, Result};
 
+use crate::{audio::Song, config::CACHE_DIR};
+
 use super::data::{BvidInfo, PlayUrl};
 
 impl BvidInfo {
@@ -43,4 +45,13 @@ pub fn download_url(url: &str, path: &str) -> Result<()> {
     resp.into_reader().read_to_end(&mut bytes)?;
     dest.write(bytes.as_slice())?;
     Ok(())
+}
+
+pub fn remove_cache(songs: &Vec<Song>) {
+    for i in songs {
+        let path = CACHE_DIR.join(i.file_name());
+        if std::fs::remove_file(path).is_ok() {
+            debug!("Clear cache: {}", i.file_name());
+        }
+    }
 }

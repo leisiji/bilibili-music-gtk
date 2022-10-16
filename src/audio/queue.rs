@@ -10,10 +10,7 @@ mod imp {
     use gstreamer::glib::once_cell::sync::Lazy;
     use gtk::glib::{ParamFlags, ParamSpec, ParamSpecEnum, ParamSpecObject, ParamSpecUInt};
 
-    use crate::{
-        audio::{shuffle::ShuffleListModel, song::Song},
-        bilibili::data::parse_config,
-    };
+    use crate::audio::{shuffle::ShuffleListModel, song::Song};
 
     use super::*;
 
@@ -33,13 +30,6 @@ mod imp {
         fn new() -> Self {
             let store = gio::ListStore::new(Song::static_type());
             let model = ShuffleListModel::new(Some(&store));
-
-            if let Ok(data) = parse_config() {
-                for i in data {
-                    let song = Song::new(i);
-                    store.append(&song);
-                }
-            }
 
             Self {
                 store,
@@ -157,7 +147,7 @@ impl Queue {
         self.sync_config();
     }
 
-    pub fn add_songs(&self, songs: &[impl IsA<glib::Object>]) {
+    pub fn add_songs(&self, songs: &Vec<Song>) {
         let is_shuffled = self.imp().model.shuffled();
         self.imp().model.unshuffle();
 
@@ -169,6 +159,16 @@ impl Queue {
             self.imp().model.reshuffle();
         }
         self.sync_config();
+    }
+
+    pub fn init(&self, data: Vec<SongData>) {
+        if !self.is_empty() {
+            self.imp().store.remove_all();
+        }
+        for i in data {
+            let song = Song::new(i);
+            self.imp().store.append(&song);
+        }
     }
 
     pub fn skip_song(&self, pos: u32) -> Option<Song> {
@@ -248,6 +248,13 @@ impl Queue {
         }
     }
 
+    pub fn select_all_songs(&self) {
+        for i in 0..self.imp().store.n_items() {
+            let song = self.imp().store.item(i).unwrap();
+            song.downcast_ref::<Song>().unwrap().set_selected(true);
+        }
+    }
+
     pub fn n_selected_songs(&self) -> u32 {
         let mut count = 0;
         for i in 0..self.imp().store.n_items() {
@@ -258,6 +265,34 @@ impl Queue {
         }
 
         count
+    }
+
+    pub fn remove_songs(&self, songs: &Vec<Song>) {
+        let was_shuffled = self.imp().model.shuffled();
+        let n_songs = self.n_songs();
+        for song in songs {
+            for pos in 0..n_songs {
+                let s = self
+                    .imp()
+                    .store
+                    .item(pos)
+                    .unwrap()
+                    .downcast::<Song>()
+                    .unwrap();
+                if s.equals(song) {
+                    self.imp().store.remove(pos);
+                    break;
+                }
+            }
+        }
+
+        if n_songs != self.n_songs() {
+            if was_shuffled {
+                self.imp().model.reshuffle();
+            }
+            self.notify("n-songs");
+        }
+        self.sync_config();
     }
 
     pub fn remove_song(&self, song: &Song) {

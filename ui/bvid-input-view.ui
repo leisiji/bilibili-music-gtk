@@ -4,22 +4,35 @@
 
   <template class="BvidInputView" parent="GtkPopover">
     <child>
-      <object class="GtkBox">
-        <property name="orientation">horizontal</property>
-        <child>
-          <object class="GtkEntry" id="bv_input">
-            <property name="width-request">200</property>
-            <style>
-              <class name="flat"/>
-            </style>
+      <object class="GtkFrame">
+        <style>
+          <class name="flat"/>
+        </style>
+        <child type="label">
+          <object class="GtkLabel">
+            <property name="label" translatable="yes">输入 BV 号</property>
           </object>
         </child>
+
         <child>
-          <object class="GtkButton" id="confirm_btn">
-            <property name="label">确定</property>
-            <style>
-              <class name="flat"/>
-            </style>
+          <object class="GtkBox">
+            <property name="orientation">horizontal</property>
+            <child>
+              <object class="GtkEntry" id="bv_input">
+                <property name="width-request">200</property>
+                <style>
+                  <class name="flat"/>
+                </style>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton" id="confirm_btn">
+                <property name="label">确定</property>
+                <style>
+                  <class name="flat"/>
+                </style>
+              </object>
+            </child>
           </object>
         </child>
       </object>
