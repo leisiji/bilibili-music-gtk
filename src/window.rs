@@ -10,8 +10,11 @@ use gtk::{
     CompositeTemplate, SingleSelection,
 };
 
-use crate::{queue_row::QueueRow, bilibili::{SongListView, remove_cache}};
 use crate::audio::{PlayerAction, Song, SongData};
+use crate::{
+    bilibili::{remove_cache, SongListView},
+    queue_row::QueueRow,
+};
 
 mod imp {
     use glib::{ParamFlags, ParamSpec, ParamSpecBoolean};
@@ -19,9 +22,7 @@ mod imp {
     use gtk::glib;
 
     use crate::{
-        audio::AudioPlayer,
-        bilibili::BvidInputView,
-        playback_control::PlaybackControl,
+        audio::AudioPlayer, bilibili::BvidInputView, playback_control::PlaybackControl,
         playlist_view::PlayListView,
     };
     use std::{cell::Cell, rc::Rc};
@@ -298,26 +299,31 @@ impl Window {
             }),
         );
 
-        rx_songs.attach(None, clone!(@strong self as win => move |data| {
-            win.create_songlist(data);
-            glib::Continue(true)
-        }));
+        rx_songs.attach(
+            None,
+            clone!(@strong self as win => move |data| {
+                win.create_songlist(data);
+                glib::Continue(true)
+            }),
+        );
     }
 
     fn create_songlist(&self, data: Vec<SongData>) {
         let view = SongListView::new(self.dynamic_cast_ref::<gtk::Window>().unwrap());
         view.init(data);
 
-        view.confirm_btn().connect_clicked(clone!(@weak self as win, @weak view => move |_| {
-            if let Some(data) = view.selected_songs() {
-                win.imp().player.queue().add_songs(&data);
-            }
-            view.upcast::<gtk::Window>().destroy();
-        }));
+        view.confirm_btn()
+            .connect_clicked(clone!(@weak self as win, @weak view => move |_| {
+                if let Some(data) = view.selected_songs() {
+                    win.imp().player.queue().add_songs(&data);
+                }
+                view.upcast::<gtk::Window>().destroy();
+            }));
 
-        view.cancel_btn().connect_clicked(clone!(@weak self as win, @weak view => move |_| {
-            view.upcast::<gtk::Window>().destroy();
-        }));
+        view.cancel_btn()
+            .connect_clicked(clone!(@weak self as win, @weak view => move |_| {
+                view.upcast::<gtk::Window>().destroy();
+            }));
 
         let w = view.upcast::<gtk::Window>();
         w.present();

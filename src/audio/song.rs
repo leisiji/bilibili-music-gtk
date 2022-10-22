@@ -70,26 +70,27 @@ impl SongData {
         let mut songs = Vec::new();
         let bvid_info: BvidInfo = BvidInfo::from_bvid(bvid)?;
 
-        let num = bvid_info.get_pages_num();
-        if num == 1 {
+        let pages = bvid_info.get_pages();
+        if pages.len() == 1 {
+            let page = pages.get(0).unwrap();
             let song_data = Self {
                 artist: Some(bvid_info.get_author().clone()),
                 title: bvid_info.get_titile().clone(),
                 album: None,
-                duration: bvid_info.get_page_duration(0),
+                duration: page.duration,
                 bvid: bvid.to_string(),
-                cid: bvid_info.get_page_cid(0),
+                cid: page.cid,
             };
             songs.push(song_data);
         } else {
-            for i in 0..num {
+            for i in pages {
                 let song_data = Self {
                     artist: Some(bvid_info.get_author().clone()),
-                    title: bvid_info.get_page_part(i),
+                    title: i.part.clone(),
                     album: Some(bvid_info.get_titile().clone()),
-                    duration: bvid_info.get_page_duration(i),
+                    duration: i.duration,
                     bvid: bvid.to_string(),
-                    cid: bvid_info.get_page_cid(i),
+                    cid: i.cid,
                 };
                 songs.push(song_data);
             }

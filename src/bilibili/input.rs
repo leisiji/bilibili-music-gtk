@@ -1,6 +1,9 @@
 use gtk::{gio, glib, prelude::*, subclass::prelude::*, SingleSelection};
 
-use crate::{audio::{Queue, Song, SongData}, song_row::SongRow};
+use crate::{
+    audio::{Queue, Song, SongData},
+    song_row::SongRow,
+};
 
 mod imp {
     use super::*;
@@ -174,7 +177,7 @@ impl SongListView {
     pub fn selected_songs(&self) -> Option<Vec<Song>> {
         let queue = self.queue();
         if queue.is_empty() {
-            return None
+            return None;
         }
 
         let mut data = Vec::new();

@@ -1,10 +1,16 @@
-use gtk::{gio, glib::{self, clone}, prelude::*, subclass::prelude::*, CompositeTemplate};
+use gtk::{
+    gio,
+    glib::{self, clone},
+    prelude::*,
+    subclass::prelude::*,
+    CompositeTemplate,
+};
 
 mod imp {
     use std::cell::RefCell;
 
     use gstreamer::glib::once_cell::sync::Lazy;
-    use gtk::glib::{ParamFlags, ParamSpec, ParamSpecObject, ParamSpecString, ParamSpecBoolean};
+    use gtk::glib::{ParamFlags, ParamSpec, ParamSpecBoolean, ParamSpecObject, ParamSpecString};
 
     use crate::audio::Song;
 
