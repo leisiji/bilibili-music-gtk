@@ -72,16 +72,30 @@ impl SongData {
 
         let pages = bvid_info.get_pages();
         if pages.len() == 1 {
-            let page = pages.get(0).unwrap();
-            let song_data = Self {
-                artist: Some(bvid_info.get_author().clone()),
-                title: bvid_info.get_titile().clone(),
-                album: None,
-                duration: page.duration,
-                bvid: bvid.to_string(),
-                cid: page.cid,
-            };
-            songs.push(song_data);
+            if let Some(episodes) = bvid_info.get_episodes() {
+                for i in episodes {
+                    let song_data = Self {
+                        artist: Some(bvid_info.get_author().clone()),
+                        title: i.page.part,
+                        album: None,
+                        duration: i.page.duration,
+                        bvid: i.bvid,
+                        cid: i.page.cid,
+                    };
+                    songs.push(song_data);
+                }
+            } else {
+                let page = pages.get(0).unwrap();
+                let song_data = Self {
+                    artist: Some(bvid_info.get_author().clone()),
+                    title: bvid_info.get_titile().clone(),
+                    album: None,
+                    duration: page.duration,
+                    bvid: bvid.to_string(),
+                    cid: page.cid,
+                };
+                songs.push(song_data);
+            }
         } else {
             for i in pages {
                 let song_data = Self {

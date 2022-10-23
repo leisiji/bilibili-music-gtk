@@ -69,11 +69,28 @@ pub struct BvidInfo {
     data: BiliBiliVideoData,
 }
 
+#[derive(Deserialize, Clone)]
+pub struct Episode {
+    pub bvid: String,
+    pub page: BiliBiliPageInfo,
+}
+
+#[derive(Deserialize)]
+struct Section {
+    episodes: Vec<Episode>,
+}
+
+#[derive(Deserialize)]
+struct UgcSeason {
+    sections: Vec<Section>,
+}
+
 #[derive(Deserialize)]
 struct BiliBiliVideoData {
     title: String,
     owner: Owner,
     pages: Vec<BiliBiliPageInfo>,
+    ugc_season: Option<UgcSeason>,
 }
 
 #[derive(Deserialize)]
@@ -81,7 +98,7 @@ struct Owner {
     name: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct BiliBiliPageInfo {
     pub cid: u32,
     pub part: String,
@@ -99,6 +116,20 @@ impl BvidInfo {
 
     pub fn get_author(&self) -> &String {
         &self.data.owner.name
+    }
+
+    pub fn get_episodes(&self) -> Option<Vec<Episode>> {
+        if let Some(season) = &self.data.ugc_season {
+            let mut vec: Vec<Episode> = Vec::new();
+            for i in &season.sections {
+                for j in &i.episodes {
+                    vec.push(j.clone());
+                }
+            }
+            Some(vec)
+        } else {
+            None
+        }
     }
 }
 
