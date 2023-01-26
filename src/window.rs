@@ -25,7 +25,7 @@ mod imp {
         audio::AudioPlayer, bilibili::BvidInputView, playback_control::PlaybackControl,
         playlist_view::PlayListView,
     };
-    use std::{cell::Cell, rc::Rc};
+    use std::{cell::{Cell, RefCell}, rc::Rc};
 
     use super::*;
 
@@ -67,6 +67,20 @@ mod imp {
                 let adjustment = win.imp().playlist_view.scroll_adjust();
                 adjustment.set_value(adjustment.upper());
             });
+
+            let press_g: Rc<RefCell<bool>> = Rc::new(RefCell::new(false));
+            klass.install_action("win.scroll_to_start", None, move |win, _, _| {
+                let press_g = press_g.clone();
+                let mut val = press_g.borrow_mut();
+                if *val {
+                    *val = false;
+                    let adjustment = win.imp().playlist_view.scroll_adjust();
+                    adjustment.set_value(0.0);
+                } else {
+                    *val = true;
+                }
+            });
+
             klass.install_action("win.half_page_up", None, move |win, _, _| {
                 let adjustment = win.imp().playlist_view.scroll_adjust();
                 let page = adjustment.page_size();
