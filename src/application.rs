@@ -28,7 +28,9 @@ mod imp {
 
             obj.set_accels_for_action("win.next", &["n"]);
             obj.set_accels_for_action("win.previous", &["p"]);
-            // obj.set_accels_for_action("win.play", &["<space>"]);
+            obj.set_accels_for_action("win.scroll_to_end", &["<Shift>g"]);
+            obj.set_accels_for_action("win.half_page_up", &["<Control>u"]);
+            obj.set_accels_for_action("win.half_page_down", &["<Control>d"]);
         }
     }
 

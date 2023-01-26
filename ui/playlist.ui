@@ -11,7 +11,7 @@
         <property name="margin-start">5</property>
         <property name="margin-end">5</property>
         <child>
-          <object class="GtkScrolledWindow">
+          <object class="GtkScrolledWindow" id="scroll_win">
             <property name="hscrollbar-policy">never</property>
             <property name="vscrollbar-policy">automatic</property>
             <property name="propagate-natural-height">true</property>

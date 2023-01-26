@@ -14,7 +14,7 @@
       <property name="hexpand">true</property>
       <child>
         <object class="GtkButton" id="backward_btn">
-          <property name="width_request">42</property>
+          <property name="width-request">42</property>
           <property name="tooltip-text" translatable="yes">上一曲</property>
           <property name="icon-name">media-skip-backward-symbolic</property>
           <property name="action-name">win.previous</property>
@@ -25,7 +25,7 @@
       </child>
       <child>
         <object class="GtkButton" id="pause_btn">
-          <property name="width_request">60</property>
+          <property name="width-request">60</property>
           <property name="tooltip_text" translatable="yes">暂停</property>
           <property name="icon-name">media-playback-start-symbolic</property>
           <property name="action-name">win.play</property>
@@ -36,7 +36,7 @@
       </child>
       <child>
         <object class="GtkButton" id="forward_btn">
-          <property name="width_request">42</property>
+          <property name="width-request">42</property>
           <property name="tooltip-text" translatable="yes">下一曲</property>
           <property name="icon-name">media-skip-forward-symbolic</property>
           <property name="action-name">win.next</property>

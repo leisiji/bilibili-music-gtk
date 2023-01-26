@@ -63,6 +63,20 @@ mod imp {
             klass.install_action("win.next", None, move |win, _, _| {
                 win.imp().player.skip_next();
             });
+            klass.install_action("win.scroll_to_end", None, move |win, _, _| {
+                let adjustment = win.imp().playlist_view.scroll_adjust();
+                adjustment.set_value(adjustment.upper());
+            });
+            klass.install_action("win.half_page_up", None, move |win, _, _| {
+                let adjustment = win.imp().playlist_view.scroll_adjust();
+                let page = adjustment.page_size();
+                adjustment.set_value(adjustment.value() - page / 2.0);
+            });
+            klass.install_action("win.half_page_down", None, move |win, _, _| {
+                let adjustment = win.imp().playlist_view.scroll_adjust();
+                let page = adjustment.page_size();
+                adjustment.set_value(adjustment.value() + page / 2.0);
+            });
             // 通过 queue-row.ui 的两个 GtkStackPage set_visible_child_name，实现多选控件按需显示的功能
             klass.install_property_action("queue.select", "playlist-selection");
         }

@@ -15,6 +15,8 @@ mod imp {
         pub queue_remove_button: TemplateChild<gtk::Button>,
         #[template_child]
         pub queue_selected_label: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub scroll_win: TemplateChild<gtk::ScrolledWindow>,
     }
 
     #[glib::object_subclass]
@@ -77,5 +79,10 @@ impl PlayListView {
 
     pub fn queue_selected_label(&self) -> gtk::Label {
         self.imp().queue_selected_label.get()
+    }
+
+    pub fn scroll_adjust(&self) -> gtk::Adjustment {
+        let win = self.imp().scroll_win.get();
+        win.vadjustment()
     }
 }

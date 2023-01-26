@@ -32,7 +32,7 @@
                 <property name="margin-bottom">4</property>
                 <child>
                   <object class="GtkMenuButton" id="add_bv_btn">
-                    <property name="width_request">42</property>
+                    <property name="width-request">42</property>
                     <property name="visible">true</property>
                     <property name="tooltip-text" translatable="yes">添加 BV 号</property>
                     <property name="icon-name">value-increase-symbolic</property>
