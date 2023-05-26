@@ -30,8 +30,8 @@ mod imp {
             obj.set_accels_for_action("win.previous", &["p"]);
             obj.set_accels_for_action("win.scroll_to_start", &["g"]);
             obj.set_accels_for_action("win.scroll_to_end", &["<Shift>g"]);
-            obj.set_accels_for_action("win.half_page_up", &["<Control>u"]);
-            obj.set_accels_for_action("win.half_page_down", &["<Control>d"]);
+            obj.set_accels_for_action("win.half_page_up", &["u"]);
+            obj.set_accels_for_action("win.half_page_down", &["d"]);
         }
     }
 

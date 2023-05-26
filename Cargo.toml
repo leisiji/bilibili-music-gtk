@@ -18,6 +18,7 @@ rand = "0.8.5"
 ureq = { version = "*" }
 anyhow = { version = "1.0" }
 lazy_static = "1.4.0"
+lofty = "0.11.0"
 
 [dependencies.adw]
 package = "libadwaita"

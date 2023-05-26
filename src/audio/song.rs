@@ -1,9 +1,10 @@
 use anyhow::Result;
 use gtk::{glib, prelude::*, subclass::prelude::*};
 use serde::{Deserialize, Serialize};
+use lofty::{read_from_path, ParseOptions, TaggedFileExt};
 
 use crate::{
-    bilibili::{data::BvidInfo, download_url, get_url},
+    bilibili::{data::BvidInfo, download_song, get_url},
     config::CACHE_DIR,
 };
 
@@ -48,13 +49,17 @@ impl SongData {
     }
 
     pub fn file_name(&self) -> String {
+        let suffix: &str = ".m4a";
         if let Some(s) = self.album() {
             let mut s = Self::escape(s);
             s.push('-');
             s.push_str(&Self::escape(self.title()));
+            s.push_str(suffix);
             s
         } else {
-            Self::escape(self.title())
+            let mut s = Self::escape(self.title());
+            s.push_str(suffix);
+            s
         }
     }
 
@@ -116,7 +121,7 @@ impl SongData {
     pub fn download(&self) -> Result<String> {
         let song_path = CACHE_DIR.join(self.file_name());
         let url = get_url(self.bvid.as_str(), self.cid)?;
-        download_url(url.as_str(), song_path.to_str().unwrap())?;
+        download_song(url.as_str(), song_path.to_str().unwrap())?;
         let uri = format!("file://{}", song_path.display());
         Ok(uri)
     }
@@ -319,18 +324,16 @@ impl Song {
 
 #[cfg(test)]
 mod test {
-    use crate::{audio::SongData, config::CACHE_DIR};
-    use gtk::glib;
-
-    use super::Song;
+    use lofty::{read_from_path, ParseOptions, TaggedFileExt};
 
     #[test]
     fn test_song() {
-        let data = SongData::from_bvid("BV1qf4y1d7d1").unwrap();
-        let song = Song::new(data.get(0).unwrap().clone());
-        let song_path = CACHE_DIR.join(song.file_name());
-        let uri = glib::filename_to_uri(song_path, None);
-        let s: String = uri.unwrap().into();
-        println!("{}", s);
+        if let Ok(tagged_file) = read_from_path("/home/ye/.cache/bilibili-music-gtk4/我在游戏里和BUG谈恋爱？！.m4a") {
+            let m4a = tagged_file.primary_tag().unwrap();
+        } else {
+            println!("read_from_path failed");
+        }
+        // let uri = glib::filename_to_uri(song_path, None);
+        // let s: String = uri.unwrap().into();
     }
 }
