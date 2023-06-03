@@ -1,7 +1,7 @@
 use anyhow::Result;
 use gtk::{glib, prelude::*, subclass::prelude::*};
 use serde::{Deserialize, Serialize};
-use lofty::{read_from_path, ParseOptions, TaggedFileExt};
+
 
 use crate::{
     bilibili::{data::BvidInfo, download_song, get_url},
